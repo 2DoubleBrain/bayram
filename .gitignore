@@ -1,1 +1,6 @@
+# Конфигурация с токеном GitHub
 github-config.json
+
+# Локальные настройки
+*.local
+.DS_Store
