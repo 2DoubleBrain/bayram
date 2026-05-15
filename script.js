@@ -748,12 +748,6 @@ function renderProductCard(product) {
         ? '<span class="sale-badge">🔥 SALE</span>' 
         : '<span class="sale-placeholder"></span>';
     
-    // Кнопка управления ценами (только для менеджера)
-    let managerButton = '';
-    if (isManagerMode) {
-        managerButton = `<button class="price-edit-btn" onclick="event.stopPropagation(); openPriceEditor(${productJson})">📊 Цены</button>`;
-    }
-    
     return `
         <div class="product-card" onclick='openProductModal(${productJson})'>
             <img src="${product.photo}" class="product-image" onerror="this.src='https://placehold.co/300x200/eee/999?text=No+Image'">
@@ -763,10 +757,7 @@ function renderProductCard(product) {
                     <span class="product-price">${displayPrice}₽</span>
                     ${rightContent}
                 </div>
-                <div class="product-buttons">
-                    <button class="open-btn">Открыть</button>
-                    ${managerButton}
-                </div>
+                <button class="open-btn">Открыть</button>
             </div>
         </div>
     `;
@@ -907,191 +898,6 @@ function renderContactsPage() {
             <div class="contact-phone">${phone}</div>
             <p>Свяжитесь с нами любым удобным способом</p>
             <p style="margin-top:20px; color:#888">Работаем ежедневно 10:00-21:00</p>
-        </div>
-    `;
-}
-// ============ РЕЖИМ МЕНЕДЖЕРА (управление ценами) ============
-let isManagerMode = false;
-let currentEditProduct = null;
-
-// Функция входа в режим менеджера
-function showManagerLogin() {
-    const password = prompt('🔐 Режим менеджера\n\nВведите пароль для изменения цен:');
-    if (password === 'Amigo2025') { // Менеджерский пароль
-        isManagerMode = true;
-        alert('✅ Режим менеджера активирован!\nТеперь вы можете менять цены, нажав на кнопку "📊 Цены" под товаром.');
-        renderShopPage(); // Обновляем страницу, чтобы показать кнопки управления
-    } else if (password !== null) {
-        alert('❌ Неверный пароль!');
-    }
-}
-
-// Функция открытия модального окна для изменения цен
-function openPriceEditor(product) {
-    currentEditProduct = product;
-    
-    const ranges = {
-        '3000-10000': product.priceRanges['3000-10000'] || 0,
-        '10000-30000': product.priceRanges['10000-30000'] || 0,
-        '30000-50000': product.priceRanges['30000-50000'] || 0,
-        '50000-100000': product.priceRanges['50000-100000'] || 0,
-        '100000-999999': product.priceRanges['100000-999999'] || 0
-    };
-    
-    const modal = document.getElementById('modalOverlay');
-    modal.innerHTML = `
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>📊 Редактирование цен</h3>
-                <button class="close-modal" onclick="closeModal()">×</button>
-            </div>
-            <div class="modal-body">
-                <h4 style="margin-bottom:15px;">${escapeHtml(product.name)}</h4>
-                
-                <div class="price-edit-group">
-                    <label>3 000 - 10 000 ₽:</label>
-                    <input type="number" id="price_3000" value="${ranges['3000-10000']}" class="price-edit-input">
-                </div>
-                <div class="price-edit-group">
-                    <label>10 000 - 30 000 ₽:</label>
-                    <input type="number" id="price_10000" value="${ranges['10000-30000']}" class="price-edit-input">
-                </div>
-                <div class="price-edit-group">
-                    <label>30 000 - 50 000 ₽:</label>
-                    <input type="number" id="price_30000" value="${ranges['30000-50000']}" class="price-edit-input">
-                </div>
-                <div class="price-edit-group">
-                    <label>50 000 - 100 000 ₽:</label>
-                    <input type="number" id="price_50000" value="${ranges['50000-100000']}" class="price-edit-input">
-                </div>
-                <div class="price-edit-group">
-                    <label>100 000+ ₽:</label>
-                    <input type="number" id="price_100000" value="${ranges['100000-999999']}" class="price-edit-input">
-                </div>
-                
-                <div class="price-edit-buttons">
-                    <button class="save-price-btn" onclick="savePriceChanges()">💾 Сохранить цены</button>
-                    <button class="cancel-price-btn" onclick="closeModal()">Отмена</button>
-                </div>
-            </div>
-        </div>
-    `;
-    modal.style.display = 'block';
-}
-
-// Функция сохранения измененных цен
-function savePriceChanges() {
-    if (!currentEditProduct) return;
-    
-    // Получаем новые значения
-    const newPrices = {
-        "3000-10000": parseInt(document.getElementById('price_3000')?.value) || 0,
-        "10000-30000": parseInt(document.getElementById('price_10000')?.value) || 0,
-        "30000-50000": parseInt(document.getElementById('price_30000')?.value) || 0,
-        "50000-100000": parseInt(document.getElementById('price_50000')?.value) || 0,
-        "100000-999999": parseInt(document.getElementById('price_100000')?.value) || 0
-    };
-    
-    // Обновляем цены в текущем объекте
-    currentEditProduct.priceRanges = newPrices;
-    
-    // Обновляем в глобальном массиве products
-    const index = products.findIndex(p => p.id === currentEditProduct.id);
-    if (index !== -1) {
-        products[index].priceRanges = newPrices;
-    }
-    
-    // Сохраняем в localStorage для временного хранения
-    const priceEdits = JSON.parse(localStorage.getItem('amigoopt_price_edits') || '{}');
-    priceEdits[currentEditProduct.id] = newPrices;
-    localStorage.setItem('amigoopt_price_edits', JSON.stringify(priceEdits));
-    
-    // Показываем инструкцию по экспорту
-    alert(`✅ Цены для "${currentEditProduct.name}" обновлены!\n\n📌 Чтобы изменения сохранились навсегда:\n1. Нажмите "📤 Экспортировать изменения" внизу страницы\n2. Сохраните файл\n3. Загрузите его на сервер (замените data.json)`);
-    
-    closeModal();
-    
-    // Обновляем отображение
-    if (currentPage === 'shop') renderShopPage();
-    if (currentPage === 'sales') renderSalesPage();
-    if (currentPage === 'cart') {
-        checkAndUpdateRangeByTotal();
-        renderCartPage();
-    }
-}
-
-// Функция экспорта всех изменений в JSON
-function exportPriceChanges() {
-    // Собираем все изменения из localStorage
-    const savedEdits = JSON.parse(localStorage.getItem('amigoopt_price_edits') || '{}');
-    
-    if (Object.keys(savedEdits).length === 0) {
-        alert('Нет сохраненных изменений цен.');
-        return;
-    }
-    
-    // Создаем копию текущих данных с обновленными ценами
-    const updatedData = {
-        shopName: shopConfig.shopName,
-        contactPhone: shopConfig.contactPhone,
-        managerTgId: shopConfig.managerTgId,
-        botToken: shopConfig.botToken,
-        categories: categories,
-        products: products.map(p => {
-            if (savedEdits[p.id]) {
-                return { ...p, priceRanges: savedEdits[p.id] };
-            }
-            return p;
-        })
-    };
-    
-    // Скачиваем файл
-    const jsonStr = JSON.stringify(updatedData, null, 2);
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'data.json';
-    a.click();
-    URL.revokeObjectURL(url);
-    
-    alert('✅ Файл data.json скачан!\n\n📌 Теперь загрузите этот файл на сервер, заменив им старый.');
-}
-
-// Добавляем кнопку входа в режим менеджера и экспорта в contacts
-function renderContactsPage() {
-    const phone = shopConfig.contactPhone || "+7 (999) 123-45-67";
-    
-    let exportSection = '';
-    if (isManagerMode) {
-        exportSection = `
-            <div style="margin-top: 20px; padding: 15px; background: #e8f5e9; border-radius: 16px;">
-                <strong>🔧 Режим менеджера активен</strong><br><br>
-                <button onclick="exportPriceChanges()" style="background: #4caf50; color: white; border: none; padding: 12px 20px; border-radius: 30px; width: 100%; margin-bottom: 10px;">
-                    📤 Экспортировать изменения цен
-                </button>
-                <button onclick="location.reload()" style="background: #ff9800; color: white; border: none; padding: 12px 20px; border-radius: 30px; width: 100%;">
-                    🔄 Выйти из режима менеджера
-                </button>
-                <p style="font-size: 12px; margin-top: 10px; color: #2e7d32;">
-                    После экспорта скачается файл data.json. Загрузите его на сервер.
-                </p>
-            </div>
-        `;
-    }
-    
-    document.getElementById('mainContent').innerHTML = `
-        <div class="contacts-page">
-            <h2 class="section-title">📞 Контакты</h2>
-            <div class="contact-phone">${phone}</div>
-            <p>Свяжитесь с нами любым удобным способом</p>
-            <p style="margin-top:20px; color:#888">Работаем ежедневно 10:00-21:00</p>
-            
-            <button onclick="showManagerLogin()" style="margin-top: 30px; background: #1a1a2e; color: #FFD700; border: none; padding: 10px; border-radius: 20px; width: 100%; font-size: 12px;">
-                🔧 Режим менеджера
-            </button>
-            
-            ${exportSection}
         </div>
     `;
 }
