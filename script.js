@@ -929,21 +929,33 @@ async function loadGithubConfig() {
 
 // Проверка специальной ссылки для входа в режим менеджера
 function checkManagerLink() {
-    // Проверяем hash в URL (часть после #)
-    // Например: site.com/#manager:Amigo2025
     const hash = window.location.hash;
     if (hash && hash.includes('manager:')) {
         const password = hash.split('manager:')[1];
         if (password === 'Amigo2025') {
-            isManagerMode = true;
-            localStorage.setItem('amigoopt_manager_mode', 'true');
-            // Убираем hash из URL
-            window.location.hash = '';
-            alert('✅ Режим менеджера активирован!\n\nТеперь вы можете менять цены, нажав на кнопку "📊 Цены" под товаром.');
-            renderShopPage();
-            if (currentPage === 'contacts') renderContactsPage();
+            // Запрашиваем токен у менеджера
+            const token = prompt('🔐 Введите GitHub токен для сохранения цен:\n(Токен нужен один раз, он не сохранится на сервере)');
+            if (token && token.startsWith('ghp_')) {
+                localStorage.setItem('github_token', token);
+                isManagerMode = true;
+                localStorage.setItem('amigoopt_manager_mode', 'true');
+                alert('✅ Режим менеджера активирован!');
+                renderShopPage();
+                if (currentPage === 'contacts') renderContactsPage();
+            } else {
+                alert('❌ Неверный токен! Получите токен в GitHub Settings → Developer settings → Personal access tokens');
+            }
         }
     }
+    
+    if (!isManagerMode && localStorage.getItem('amigoopt_manager_mode') === 'true') {
+        isManagerMode = true;
+        renderShopPage();
+        if (currentPage === 'contacts') renderContactsPage();
+    }
+}
+
+
     
     // Проверяем localStorage при загрузке
     if (!isManagerMode && localStorage.getItem('amigoopt_manager_mode') === 'true') {
@@ -954,9 +966,11 @@ function checkManagerLink() {
 }
 
 // Выход из режима менеджера
+// Выход из режима менеджера
 function exitManagerMode() {
     isManagerMode = false;
     localStorage.removeItem('amigoopt_manager_mode');
+    localStorage.removeItem('github_token');
     alert('🔒 Режим менеджера выключен');
     renderShopPage();
     if (currentPage === 'contacts') renderContactsPage();
@@ -1090,16 +1104,20 @@ function closeNotification() {
 
 // Сохранение всех изменений на GitHub
 async function saveAllToGitHub() {
-    if (!githubConfig.enabled || !githubConfig.token) {
-        // Если GitHub не настроен, экспортируем в файл
-        exportPriceChanges();
+    const githubToken = localStorage.getItem('github_token');
+    
+    if (!githubToken) {
+        alert('❌ Нет GitHub токена. Войдите в режим менеджера заново.');
         return;
     }
     
-    // Собираем все изменения
     const savedEdits = JSON.parse(localStorage.getItem('amigoopt_price_edits') || '{}');
     
-    // Создаем обновленный data.json
+    if (Object.keys(savedEdits).length === 0) {
+        alert('Нет изменений для сохранения.');
+        return;
+    }
+    
     const updatedData = {
         shopName: shopConfig.shopName,
         contactPhone: shopConfig.contactPhone,
@@ -1114,14 +1132,13 @@ async function saveAllToGitHub() {
         })
     };
     
-    // Получаем текущий SHA файла
-    const url = `https://api.github.com/repos/${githubConfig.repo}/contents/${githubConfig.path}`;
+    const url = `https://api.github.com/repos/${githubConfig.repo}/contents/data.json`;
     
     try {
-        // Получаем текущий SHA
+        // Получаем текущий файл и его SHA
         const getResponse = await fetch(url, {
             headers: {
-                'Authorization': `Bearer ${githubConfig.token}`,
+                'Authorization': `Bearer ${githubToken}`,
                 'Accept': 'application/vnd.github+json'
             }
         });
@@ -1133,7 +1150,7 @@ async function saveAllToGitHub() {
         const updateResponse = await fetch(url, {
             method: 'PUT',
             headers: {
-                'Authorization': `Bearer ${githubConfig.token}`,
+                'Authorization': `Bearer ${githubToken}`,
                 'Accept': 'application/vnd.github+json',
                 'Content-Type': 'application/json'
             },
@@ -1147,19 +1164,15 @@ async function saveAllToGitHub() {
         const result = await updateResponse.json();
         
         if (updateResponse.ok) {
-            alert('✅ Цены успешно сохранены на GitHub!\nИзменения сразу видны пользователям.');
-            closeNotification();
-            // Очищаем сохраненные изменения
+            alert('✅ Цены успешно сохранены на GitHub!');
             localStorage.removeItem('amigoopt_price_edits');
+            closeNotification();
         } else {
-            console.error('Ошибка GitHub API:', result);
-            alert(`❌ Ошибка сохранения: ${result.message}\n\nПопробуйте экспортировать файл вручную.`);
-            exportPriceChanges();
+            alert(`❌ Ошибка: ${result.message}\n\nПроверьте токен и права доступа.`);
         }
     } catch(error) {
-        console.error('Ошибка:', error);
-        alert('⚠️ Ошибка соединения с GitHub.\nСохраняем файл локально.');
-        exportPriceChanges();
+        console.error(error);
+        alert('⚠️ Ошибка соединения. Попробуйте еще раз.');
     }
 }
 
@@ -1259,6 +1272,28 @@ function renderContactsPage() {
             ${managerInfo}
         </div>
     `;
+}
+// Автоматически получаем имя репозитория из URL страницы
+function getRepoInfo() {
+    // GitHub Pages URL выглядит так: https://username.github.io/reponame/
+    const hostname = window.location.hostname;
+    if (hostname.includes('github.io')) {
+        const parts = hostname.split('.');
+        const username = parts[0];
+        // Получаем имя репозитория из пути
+        const pathParts = window.location.pathname.split('/');
+        const reponame = pathParts[1] || '';
+        return { username, reponame };
+    }
+    return null;
+}
+
+// Глобальный объект с информацией о репозитории
+const repoInfo = getRepoInfo();
+if (repoInfo) {
+    githubConfig.repo = `${repoInfo.username}/${repoInfo.reponame}`;
+    githubConfig.path = "data.json";
+    console.log('Репозиторий определен:', githubConfig.repo);
 }
 
 // Инициализация режима менеджера
