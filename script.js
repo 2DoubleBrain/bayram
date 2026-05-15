@@ -18,7 +18,7 @@ let selectedQuantity = 1;
 let isManagerMode = false;
 let currentEditProduct = null;
 
-// GitHub конфигурация (автоматически определяется)
+// GitHub конфигурация
 let githubConfig = {
     enabled: true,
     repo: "",
@@ -121,15 +121,15 @@ async function loadData() {
         }
         
         const data = await response.json();
-        console.log('Данные загружены');
+        console.log('Данные загружены, товаров:', data.products?.length || 0);
         
-        products = data.products;
-        categories = data.categories;
+        products = data.products || [];
+        categories = data.categories || [];
         shopConfig = {
-            shopName: data.shopName,
-            contactPhone: data.contactPhone,
-            managerTgId: data.managerTgId,
-            botToken: data.botToken
+            shopName: data.shopName || 'AmigoOPT',
+            contactPhone: data.contactPhone || '+7 (968) 890-07-44',
+            managerTgId: data.managerTgId || '5404907427',
+            botToken: data.botToken || ''
         };
         
         // Настраиваем GitHub конфиг
@@ -149,9 +149,14 @@ async function loadData() {
         
         const savedCart = localStorage.getItem('amigoopt_cart');
         if (savedCart) {
-            cart = JSON.parse(savedCart);
-            if (cart.length > 0) {
-                recalcCartPrices();
+            try {
+                cart = JSON.parse(savedCart);
+                if (cart.length > 0) {
+                    recalcCartPrices();
+                }
+            } catch(e) {
+                console.log('Ошибка загрузки корзины');
+                cart = [];
             }
         }
         
@@ -219,7 +224,14 @@ function switchPage(page) {
 
 // ============ ЛОГИКА ПЕРЕСЧЕТА ЦЕН ============
 function getPriceForRange(product, rangeKey) {
-    return product.priceRanges[rangeKey] || Object.values(product.priceRanges)[0];
+    if (product.priceRanges && product.priceRanges[rangeKey]) {
+        return product.priceRanges[rangeKey];
+    }
+    if (product.priceRanges) {
+        const values = Object.values(product.priceRanges);
+        return values.length > 0 ? values[0] : 0;
+    }
+    return 0;
 }
 
 function getCartTotal() {
@@ -484,26 +496,24 @@ function submitOrder() {
     updateCartBadge();
 }
 
-// ============ РЕЖИМ МЕНЕДЖЕРА (скрытый доступ по ссылке) ============
+// ============ РЕЖИМ МЕНЕДЖЕРА ============
 
-// Проверка специальной ссылки для входа в режим менеджера
 function checkManagerLink() {
     const hash = window.location.hash;
     if (hash && hash.includes('manager:')) {
         const password = hash.split('manager:')[1];
         if (password === 'Amigo2025') {
-            // Запрашиваем токен у менеджера
             const token = prompt('🔐 Введите GitHub токен для сохранения цен:\n\nТокен можно получить в GitHub:\nSettings → Developer settings → Personal access tokens → Generate new token\n\nНужно отметить галочку "repo"');
             if (token && token.startsWith('ghp_')) {
                 localStorage.setItem('amigoopt_github_token', token);
                 githubConfig.token = token;
                 isManagerMode = true;
                 localStorage.setItem('amigoopt_manager_mode', 'true');
-                alert('✅ Режим менеджера активирован!\n\nТеперь вы можете менять цены, нажав на кнопку "📊 Изменить цену" под товаром.');
+                alert('✅ Режим менеджера активирован!');
                 renderShopPage();
                 if (currentPage === 'contacts') renderContactsPage();
             } else if (token) {
-                alert('❌ Неверный токен! Токен должен начинаться с "ghp_"');
+                alert('❌ Неверный токен!');
             }
             window.location.hash = '';
         }
@@ -520,7 +530,6 @@ function checkManagerLink() {
     }
 }
 
-// Выход из режима менеджера
 function exitManagerMode() {
     isManagerMode = false;
     localStorage.removeItem('amigoopt_manager_mode');
@@ -531,18 +540,17 @@ function exitManagerMode() {
     if (currentPage === 'contacts') renderContactsPage();
 }
 
-// Функция открытия модального окна для изменения цен
 function openPriceEditor(product) {
     if (!isManagerMode) return;
     
     currentEditProduct = product;
     
     const ranges = {
-        '3000-10000': product.priceRanges['3000-10000'] || 0,
-        '10000-30000': product.priceRanges['10000-30000'] || 0,
-        '30000-50000': product.priceRanges['30000-50000'] || 0,
-        '50000-100000': product.priceRanges['50000-100000'] || 0,
-        '100000-999999': product.priceRanges['100000-999999'] || 0
+        '3000-10000': product.priceRanges?.['3000-10000'] || 0,
+        '10000-30000': product.priceRanges?.['10000-30000'] || 0,
+        '30000-50000': product.priceRanges?.['30000-50000'] || 0,
+        '50000-100000': product.priceRanges?.['50000-100000'] || 0,
+        '100000-999999': product.priceRanges?.['100000-999999'] || 0
     };
     
     const modal = document.getElementById('modalOverlay');
@@ -586,7 +594,6 @@ function openPriceEditor(product) {
     modal.style.display = 'block';
 }
 
-// Функция сохранения измененных цен
 function savePriceChanges() {
     if (!currentEditProduct) return;
     
@@ -598,23 +605,19 @@ function savePriceChanges() {
         "100000-999999": parseInt(document.getElementById('price_100000')?.value) || 0
     };
     
-    // Обновляем цены в текущем объекте
     currentEditProduct.priceRanges = newPrices;
     
-    // Обновляем в глобальном массиве products
     const index = products.findIndex(p => p.id === currentEditProduct.id);
     if (index !== -1) {
         products[index].priceRanges = newPrices;
     }
     
-    // Сохраняем в localStorage
     const priceEdits = JSON.parse(localStorage.getItem('amigoopt_price_edits') || '{}');
     priceEdits[currentEditProduct.id] = newPrices;
     localStorage.setItem('amigoopt_price_edits', JSON.stringify(priceEdits));
     
     closeModal();
     
-    // Обновляем отображение
     if (currentPage === 'shop') renderShopPage();
     if (currentPage === 'sales') renderSalesPage();
     if (currentPage === 'cart') {
@@ -622,11 +625,9 @@ function savePriceChanges() {
         renderCartPage();
     }
     
-    // Показываем уведомление
     showSaveNotification();
 }
 
-// Уведомление о необходимости сохранить изменения
 function showSaveNotification() {
     let notification = document.getElementById('managerNotification');
     if (!notification) {
@@ -655,7 +656,6 @@ function closeNotification() {
     if (notification) notification.style.display = 'none';
 }
 
-// Сохранение всех изменений на GitHub
 async function saveAllToGitHub() {
     if (!githubConfig.token) {
         alert('❌ Нет GitHub токена. Войдите в режим менеджера заново по ссылке.');
@@ -663,7 +663,7 @@ async function saveAllToGitHub() {
     }
     
     if (!githubConfig.repo) {
-        alert('❌ Не удалось определить репозиторий. Убедитесь, что сайт открыт через GitHub Pages.');
+        alert('❌ Не удалось определить репозиторий.');
         return;
     }
     
@@ -674,7 +674,6 @@ async function saveAllToGitHub() {
         return;
     }
     
-    // Создаем обновленный data.json
     const updatedData = {
         shopName: shopConfig.shopName,
         contactPhone: shopConfig.contactPhone,
@@ -694,7 +693,6 @@ async function saveAllToGitHub() {
     try {
         console.log('Сохраняем на GitHub:', url);
         
-        // Получаем текущий файл и его SHA
         const getResponse = await fetch(url, {
             headers: {
                 'Authorization': `Bearer ${githubConfig.token}`,
@@ -703,16 +701,14 @@ async function saveAllToGitHub() {
         });
         
         if (!getResponse.ok) {
-            throw new Error(`HTTP ${getResponse.status}: ${getResponse.statusText}`);
+            throw new Error(`HTTP ${getResponse.status}`);
         }
         
         const fileData = await getResponse.json();
         const sha = fileData.sha;
         
-        // Кодируем содержимое в base64
         const content = btoa(unescape(encodeURIComponent(JSON.stringify(updatedData, null, 2))));
         
-        // Обновляем файл
         const updateResponse = await fetch(url, {
             method: 'PUT',
             headers: {
@@ -727,55 +723,18 @@ async function saveAllToGitHub() {
             })
         });
         
-        const result = await updateResponse.json();
-        
         if (updateResponse.ok) {
-            alert('✅ Цены успешно сохранены на GitHub!\nИзменения сразу видны пользователям.');
+            alert('✅ Цены успешно сохранены на GitHub!');
             localStorage.removeItem('amigoopt_price_edits');
             closeNotification();
         } else {
-            console.error('Ошибка GitHub API:', result);
-            alert(`❌ Ошибка: ${result.message}\n\nПроверьте токен и права доступа.`);
+            const result = await updateResponse.json();
+            alert(`❌ Ошибка: ${result.message}`);
         }
     } catch(error) {
         console.error('Ошибка:', error);
         alert('⚠️ Ошибка соединения с GitHub. Попробуйте еще раз.');
     }
-}
-
-// Функция ручного экспорта (запасной вариант)
-function exportPriceChanges() {
-    const savedEdits = JSON.parse(localStorage.getItem('amigoopt_price_edits') || '{}');
-    
-    if (Object.keys(savedEdits).length === 0) {
-        alert('Нет сохраненных изменений цен.');
-        return;
-    }
-    
-    const updatedData = {
-        shopName: shopConfig.shopName,
-        contactPhone: shopConfig.contactPhone,
-        managerTgId: shopConfig.managerTgId,
-        botToken: shopConfig.botToken,
-        categories: categories,
-        products: products.map(p => {
-            if (savedEdits[p.id]) {
-                return { ...p, priceRanges: savedEdits[p.id] };
-            }
-            return p;
-        })
-    };
-    
-    const jsonStr = JSON.stringify(updatedData, null, 2);
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'data.json';
-    a.click();
-    URL.revokeObjectURL(url);
-    
-    alert('✅ Файл data.json скачан!\n\n📌 Теперь загрузите его в репозиторий через GitHub.com');
 }
 
 // ============ ОТОБРАЖЕНИЕ ============
@@ -787,7 +746,10 @@ function escapeHtml(text) {
 }
 
 function renderProductCard(product) {
-    let displayPrice = product.priceRanges['100000-999999'] || Object.values(product.priceRanges)[0];
+    let displayPrice = 0;
+    if (product.priceRanges) {
+        displayPrice = product.priceRanges['100000-999999'] || Object.values(product.priceRanges)[0] || 0;
+    }
     
     const productJson = JSON.stringify(product).replace(/'/g, "&#39;").replace(/"/g, '&quot;');
     
@@ -802,7 +764,7 @@ function renderProductCard(product) {
     
     return `
         <div class="product-card" onclick='openProductModal(${productJson})'>
-            <img src="${product.photo}" class="product-image" onerror="this.src='https://placehold.co/300x200/eee/999?text=No+Image'">
+            <img src="${product.photo || 'https://placehold.co/300x200/eee/999?text=No+Image'}" class="product-image" onerror="this.src='https://placehold.co/300x200/eee/999?text=No+Image'">
             <div class="product-info">
                 <div class="product-name">${escapeHtml(product.name)}</div>
                 <div class="product-price-wrapper">
@@ -832,9 +794,11 @@ function renderShopPage() {
     const other = filtered.filter(p => !p.popular);
     
     let html = `<div class="categories-grid"><div class="category-chip ${currentCategory === 'all' ? 'active' : ''}" data-cat="all">Все</div>`;
-    categories.forEach(cat => { 
-        html += `<div class="category-chip ${currentCategory === cat ? 'active' : ''}" data-cat="${cat}">${escapeHtml(cat)}</div>`; 
-    });
+    if (categories && categories.length) {
+        categories.forEach(cat => { 
+            html += `<div class="category-chip ${currentCategory === cat ? 'active' : ''}" data-cat="${cat}">${escapeHtml(cat)}</div>`; 
+        });
+    }
     html += `</div>`;
     
     if (currentPriceRange && cart.length > 0) {
@@ -991,10 +955,12 @@ function openProductModal(product) {
     };
     
     let rangesHtml = '<div class="range-options">';
-    for (const range of priceRangesConfig) {
-        const price = product.priceRanges[range.key];
-        if (price !== undefined && price > 0) {
-            rangesHtml += `<button class="range-btn" data-range="${range.key}" data-price="${price}">${rangeMap[range.key]} — ${price}₽/шт</button>`;
+    if (product.priceRanges) {
+        for (const range of priceRangesConfig) {
+            const price = product.priceRanges[range.key];
+            if (price !== undefined && price > 0) {
+                rangesHtml += `<button class="range-btn" data-range="${range.key}" data-price="${price}">${rangeMap[range.key]} — ${price}₽/шт</button>`;
+            }
         }
     }
     rangesHtml += '</div>';
@@ -1018,7 +984,7 @@ function openProductModal(product) {
                 <button class="close-modal" onclick="closeModal()">×</button>
             </div>
             <div class="modal-body">
-                <img src="${product.photo}" class="modal-image" onerror="this.src='https://placehold.co/300x200/eee/999?text=No+Image'">
+                <img src="${product.photo || 'https://placehold.co/300x200/eee/999?text=No+Image'}" class="modal-image" onerror="this.src='https://placehold.co/300x200/eee/999?text=No+Image'">
                 <p style="color:#666; margin-bottom:10px;">${product.description || ''}</p>
                 <div id="step1Container">
                     <div class="step-title"><span class="step-number">1</span> Выберите сумму заказа</div>
