@@ -901,6 +901,369 @@ function renderContactsPage() {
         </div>
     `;
 }
+// ============ РЕЖИМ МЕНЕДЖЕРА (скрытый доступ по ссылке) ============
+let isManagerMode = false;
+let currentEditProduct = null;
+
+// GitHub конфигурация (хранится в отдельном файле для безопасности)
+let githubConfig = {
+    enabled: false,
+    repo: "",
+    path: "data.json",
+    token: ""
+};
+
+// Загрузка GitHub конфигурации из отдельного файла
+async function loadGithubConfig() {
+    try {
+        const response = await fetch('./github-config.json');
+        if (response.ok) {
+            githubConfig = await response.json();
+            githubConfig.enabled = true;
+            console.log('GitHub конфигурация загружена');
+        }
+    } catch(e) {
+        console.log('GitHub конфигурация не найдена, работаем в режиме ручного экспорта');
+    }
+}
+
+// Проверка специальной ссылки для входа в режим менеджера
+function checkManagerLink() {
+    // Проверяем hash в URL (часть после #)
+    // Например: site.com/#manager:Amigo2025
+    const hash = window.location.hash;
+    if (hash && hash.includes('manager:')) {
+        const password = hash.split('manager:')[1];
+        if (password === 'Amigo2025') {
+            isManagerMode = true;
+            localStorage.setItem('amigoopt_manager_mode', 'true');
+            // Убираем hash из URL
+            window.location.hash = '';
+            alert('✅ Режим менеджера активирован!\n\nТеперь вы можете менять цены, нажав на кнопку "📊 Цены" под товаром.');
+            renderShopPage();
+            if (currentPage === 'contacts') renderContactsPage();
+        }
+    }
+    
+    // Проверяем localStorage при загрузке
+    if (!isManagerMode && localStorage.getItem('amigoopt_manager_mode') === 'true') {
+        isManagerMode = true;
+        if (currentPage === 'shop') renderShopPage();
+        if (currentPage === 'contacts') renderContactsPage();
+    }
+}
+
+// Выход из режима менеджера
+function exitManagerMode() {
+    isManagerMode = false;
+    localStorage.removeItem('amigoopt_manager_mode');
+    alert('🔒 Режим менеджера выключен');
+    renderShopPage();
+    if (currentPage === 'contacts') renderContactsPage();
+}
+
+// Функция открытия модального окна для изменения цен
+function openPriceEditor(product) {
+    if (!isManagerMode) return;
+    
+    currentEditProduct = product;
+    
+    const ranges = {
+        '3000-10000': product.priceRanges['3000-10000'] || 0,
+        '10000-30000': product.priceRanges['10000-30000'] || 0,
+        '30000-50000': product.priceRanges['30000-50000'] || 0,
+        '50000-100000': product.priceRanges['50000-100000'] || 0,
+        '100000-999999': product.priceRanges['100000-999999'] || 0
+    };
+    
+    const modal = document.getElementById('modalOverlay');
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📊 Редактирование цен</h3>
+                <button class="close-modal" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <h4 style="margin-bottom:15px;">${escapeHtml(product.name)}</h4>
+                
+                <div class="price-edit-group">
+                    <label>💰 3 000 - 10 000 ₽:</label>
+                    <input type="number" id="price_3000" value="${ranges['3000-10000']}" class="price-edit-input">
+                </div>
+                <div class="price-edit-group">
+                    <label>💰 10 000 - 30 000 ₽:</label>
+                    <input type="number" id="price_10000" value="${ranges['10000-30000']}" class="price-edit-input">
+                </div>
+                <div class="price-edit-group">
+                    <label>💰 30 000 - 50 000 ₽:</label>
+                    <input type="number" id="price_30000" value="${ranges['30000-50000']}" class="price-edit-input">
+                </div>
+                <div class="price-edit-group">
+                    <label>💰 50 000 - 100 000 ₽:</label>
+                    <input type="number" id="price_50000" value="${ranges['50000-100000']}" class="price-edit-input">
+                </div>
+                <div class="price-edit-group">
+                    <label>💰 100 000+ ₽:</label>
+                    <input type="number" id="price_100000" value="${ranges['100000-999999']}" class="price-edit-input">
+                </div>
+                
+                <div class="price-edit-buttons">
+                    <button class="save-price-btn" onclick="savePriceChanges()">💾 Сохранить цены</button>
+                    <button class="cancel-price-btn" onclick="closeModal()">Отмена</button>
+                </div>
+            </div>
+        </div>
+    `;
+    modal.style.display = 'block';
+}
+
+// Функция сохранения измененных цен
+async function savePriceChanges() {
+    if (!currentEditProduct) return;
+    
+    const newPrices = {
+        "3000-10000": parseInt(document.getElementById('price_3000')?.value) || 0,
+        "10000-30000": parseInt(document.getElementById('price_10000')?.value) || 0,
+        "30000-50000": parseInt(document.getElementById('price_30000')?.value) || 0,
+        "50000-100000": parseInt(document.getElementById('price_50000')?.value) || 0,
+        "100000-999999": parseInt(document.getElementById('price_100000')?.value) || 0
+    };
+    
+    // Обновляем цены в текущем объекте
+    currentEditProduct.priceRanges = newPrices;
+    
+    // Обновляем в глобальном массиве products
+    const index = products.findIndex(p => p.id === currentEditProduct.id);
+    if (index !== -1) {
+        products[index].priceRanges = newPrices;
+    }
+    
+    // Сохраняем в localStorage
+    const priceEdits = JSON.parse(localStorage.getItem('amigoopt_price_edits') || '{}');
+    priceEdits[currentEditProduct.id] = newPrices;
+    localStorage.setItem('amigoopt_price_edits', JSON.stringify(priceEdits));
+    
+    closeModal();
+    
+    // Обновляем отображение
+    if (currentPage === 'shop') renderShopPage();
+    if (currentPage === 'sales') renderSalesPage();
+    if (currentPage === 'cart') {
+        checkAndUpdateRangeByTotal();
+        renderCartPage();
+    }
+    
+    // Показываем уведомление с кнопкой сохранения на GitHub
+    showSaveNotification();
+}
+
+// Уведомление о необходимости сохранить изменения
+function showSaveNotification() {
+    // Создаем плавающее уведомление
+    let notification = document.getElementById('managerNotification');
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.id = 'managerNotification';
+        notification.className = 'manager-notification';
+        document.body.appendChild(notification);
+    }
+    
+    notification.innerHTML = `
+        <div class="notification-content">
+            <span>✏️ Цены изменены!</span>
+            <button onclick="saveAllToGitHub()" class="save-github-btn">💾 Сохранить на сервер</button>
+            <button onclick="closeNotification()" class="close-notif-btn">×</button>
+        </div>
+    `;
+    notification.style.display = 'block';
+    
+    // Автоскрытие через 10 секунд
+    setTimeout(() => {
+        if (notification) notification.style.display = 'none';
+    }, 10000);
+}
+
+function closeNotification() {
+    const notification = document.getElementById('managerNotification');
+    if (notification) notification.style.display = 'none';
+}
+
+// Сохранение всех изменений на GitHub
+async function saveAllToGitHub() {
+    if (!githubConfig.enabled || !githubConfig.token) {
+        // Если GitHub не настроен, экспортируем в файл
+        exportPriceChanges();
+        return;
+    }
+    
+    // Собираем все изменения
+    const savedEdits = JSON.parse(localStorage.getItem('amigoopt_price_edits') || '{}');
+    
+    // Создаем обновленный data.json
+    const updatedData = {
+        shopName: shopConfig.shopName,
+        contactPhone: shopConfig.contactPhone,
+        managerTgId: shopConfig.managerTgId,
+        botToken: shopConfig.botToken,
+        categories: categories,
+        products: products.map(p => {
+            if (savedEdits[p.id]) {
+                return { ...p, priceRanges: savedEdits[p.id] };
+            }
+            return p;
+        })
+    };
+    
+    // Получаем текущий SHA файла
+    const url = `https://api.github.com/repos/${githubConfig.repo}/contents/${githubConfig.path}`;
+    
+    try {
+        // Получаем текущий SHA
+        const getResponse = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${githubConfig.token}`,
+                'Accept': 'application/vnd.github+json'
+            }
+        });
+        
+        const fileData = await getResponse.json();
+        const sha = fileData.sha;
+        
+        // Обновляем файл
+        const updateResponse = await fetch(url, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${githubConfig.token}`,
+                'Accept': 'application/vnd.github+json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message: `Обновление цен от ${new Date().toLocaleString('ru-RU')}`,
+                content: btoa(unescape(encodeURIComponent(JSON.stringify(updatedData, null, 2)))),
+                sha: sha
+            })
+        });
+        
+        const result = await updateResponse.json();
+        
+        if (updateResponse.ok) {
+            alert('✅ Цены успешно сохранены на GitHub!\nИзменения сразу видны пользователям.');
+            closeNotification();
+            // Очищаем сохраненные изменения
+            localStorage.removeItem('amigoopt_price_edits');
+        } else {
+            console.error('Ошибка GitHub API:', result);
+            alert(`❌ Ошибка сохранения: ${result.message}\n\nПопробуйте экспортировать файл вручную.`);
+            exportPriceChanges();
+        }
+    } catch(error) {
+        console.error('Ошибка:', error);
+        alert('⚠️ Ошибка соединения с GitHub.\nСохраняем файл локально.');
+        exportPriceChanges();
+    }
+}
+
+// Функция ручного экспорта (запасной вариант)
+function exportPriceChanges() {
+    const savedEdits = JSON.parse(localStorage.getItem('amigoopt_price_edits') || '{}');
+    
+    if (Object.keys(savedEdits).length === 0) {
+        alert('Нет сохраненных изменений цен.');
+        return;
+    }
+    
+    const updatedData = {
+        shopName: shopConfig.shopName,
+        contactPhone: shopConfig.contactPhone,
+        managerTgId: shopConfig.managerTgId,
+        botToken: shopConfig.botToken,
+        categories: categories,
+        products: products.map(p => {
+            if (savedEdits[p.id]) {
+                return { ...p, priceRanges: savedEdits[p.id] };
+            }
+            return p;
+        })
+    };
+    
+    const jsonStr = JSON.stringify(updatedData, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'data.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    alert('✅ Файл data.json скачан!\n\n📌 Загрузите его на сервер через файловый менеджер хостинга.');
+}
+
+// Обновляем renderProductCard
+function renderProductCard(product) {
+    let displayPrice = product.priceRanges['100000-999999'] || Object.values(product.priceRanges)[0];
+    
+    const productJson = JSON.stringify(product).replace(/'/g, "&#39;").replace(/"/g, '&quot;');
+    
+    const rightContent = product.sale 
+        ? '<span class="sale-badge">🔥 SALE</span>' 
+        : '<span class="sale-placeholder"></span>';
+    
+    // Кнопка управления ценами (только для менеджера, видна невооруженным глазом)
+    let managerButton = '';
+    if (isManagerMode) {
+        managerButton = `<button class="price-edit-btn" onclick="event.stopPropagation(); openPriceEditor(${productJson})">📊 Изменить цену</button>`;
+    }
+    
+    return `
+        <div class="product-card" onclick='openProductModal(${productJson})'>
+            <img src="${product.photo}" class="product-image" onerror="this.src='https://placehold.co/300x200/eee/999?text=No+Image'">
+            <div class="product-info">
+                <div class="product-name">${escapeHtml(product.name)}</div>
+                <div class="product-price-wrapper">
+                    <span class="product-price">${displayPrice}₽</span>
+                    ${rightContent}
+                </div>
+                <div class="product-buttons">
+                    <button class="open-btn">Открыть</button>
+                    ${managerButton}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Обновляем ContactsPage (без кнопки, только информация)
+function renderContactsPage() {
+    const phone = shopConfig.contactPhone || "+7 (999) 123-45-67";
+    
+    let managerInfo = '';
+    if (isManagerMode) {
+        managerInfo = `
+            <div class="manager-panel">
+                <div class="manager-header">🔧 Режим менеджера активен</div>
+                <div class="manager-actions">
+                    <button onclick="saveAllToGitHub()" class="manager-save-btn">💾 Сохранить все изменения на сервер</button>
+                    <button onclick="exitManagerMode()" class="manager-exit-btn">🔒 Выйти из режима менеджера</button>
+                </div>
+                <p class="manager-hint">Совет: нажмите "Сохранить" после изменения цен на товарах</p>
+            </div>
+        `;
+    }
+    
+    document.getElementById('mainContent').innerHTML = `
+        <div class="contacts-page">
+            <h2 class="section-title">📞 Контакты</h2>
+            <div class="contact-phone">${phone}</div>
+            <p>Свяжитесь с нами любым удобным способом</p>
+            <p style="margin-top:20px; color:#888">Работаем ежедневно 10:00-21:00</p>
+            ${managerInfo}
+        </div>
+    `;
+}
+
+// Инициализация режима менеджера
+loadGithubConfig();
+checkManagerLink();
 
 // ============ ЗАПУСК ============
 loadData();
