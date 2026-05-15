@@ -14,6 +14,18 @@ let selectedPrice = null;
 let selectedVariant = null;
 let selectedQuantity = 1;
 
+// Режим менеджера
+let isManagerMode = false;
+let currentEditProduct = null;
+
+// GitHub конфигурация (автоматически определяется)
+let githubConfig = {
+    enabled: true,
+    repo: "",
+    path: "data.json",
+    token: null
+};
+
 // ============ КОНФИГУРАЦИЯ ЦЕНОВЫХ ДИАПАЗОНОВ ============
 const priceRangesConfig = [
     { key: '3000-10000', label: '3 000 - 10 000 ₽', minTotal: 3000, maxTotal: 10000 },
@@ -86,6 +98,18 @@ function saveUserInfo(phoneNumber = null) {
     }
 }
 
+// ============ АВТОМАТИЧЕСКОЕ ОПРЕДЕЛЕНИЕ РЕПОЗИТОРИЯ ============
+function getRepoInfo() {
+    const hostname = window.location.hostname;
+    if (hostname.includes('github.io')) {
+        const username = hostname.split('.')[0];
+        const pathParts = window.location.pathname.split('/');
+        const reponame = pathParts[1] || '';
+        return { username, reponame };
+    }
+    return null;
+}
+
 // ============ ЗАГРУЗКА ДАННЫХ ============
 async function loadData() {
     try {
@@ -107,6 +131,21 @@ async function loadData() {
             managerTgId: data.managerTgId,
             botToken: data.botToken
         };
+        
+        // Настраиваем GitHub конфиг
+        const repoInfo = getRepoInfo();
+        if (repoInfo && repoInfo.reponame) {
+            githubConfig.repo = `${repoInfo.username}/${repoInfo.reponame}`;
+            console.log('Репозиторий определен:', githubConfig.repo);
+        } else {
+            githubConfig.enabled = false;
+        }
+        
+        // Загружаем сохраненный токен
+        const savedToken = localStorage.getItem('amigoopt_github_token');
+        if (savedToken) {
+            githubConfig.token = savedToken;
+        }
         
         const savedCart = localStorage.getItem('amigoopt_cart');
         if (savedCart) {
@@ -155,6 +194,9 @@ function initApp() {
     
     switchPage('shop');
     updateCartBadge();
+    
+    // Проверяем вход по ссылке
+    checkManagerLink();
 }
 
 function switchPage(page) {
@@ -286,24 +328,11 @@ function getVariantType(product) {
 
 // ============ ОТПРАВКА ЗАКАЗА В TELEGRAM ============
 async function sendOrderToTelegram(orderText) {
-    // Проверяем наличие токена
     if (!shopConfig.botToken) {
-        console.error('Токен бота не найден в конфиге');
+        console.log('Бот не настроен');
         alert('⚠️ Заказ создан, но бот не настроен. Сообщите менеджеру.');
         return;
     }
-    
-    // Убираем проверку на "ВАШ_ТОКЕН_БОТА" - это старая заглушка!
-    // Просто проверяем, что токен не пустой и не слишком короткий
-    if (shopConfig.botToken.length < 20) {
-        console.error('Токен бота похож на заглушку');
-        alert('⚠️ Заказ создан, но бот не настроен. Сообщите менеджеру.');
-        return;
-    }
-    
-    console.log('Попытка отправки заказа...');
-    console.log('Chat ID (менеджер):', shopConfig.managerTgId);
-    console.log('Токен бота:', shopConfig.botToken.substring(0, 15) + '...');
     
     try {
         const response = await fetch(`https://api.telegram.org/bot${shopConfig.botToken}/sendMessage`, {
@@ -317,20 +346,13 @@ async function sendOrderToTelegram(orderText) {
         });
         
         const result = await response.json();
-        console.log('Ответ от Telegram:', result);
-        
         if (result.ok) {
-            console.log('✅ Заказ успешно отправлен!');
-            return true;
+            console.log('Заказ отправлен');
         } else {
-            console.error('Ошибка Telegram API:', result.description);
-            alert(`❌ Ошибка отправки: ${result.description}\n\nПроверьте:\n1. Бот запущен?\n2. Менеджер написал боту /start?\n3. Правильный ли токен?`);
-            return false;
+            console.error('Ошибка:', result.description);
         }
     } catch(error) {
-        console.error('Ошибка соединения:', error);
-        alert('⚠️ Ошибка соединения с Telegram. Заказ сохранен в корзине.\nСообщите менеджеру вручную.');
-        return false;
+        console.error('Ошибка:', error);
     }
 }
 
@@ -462,7 +484,496 @@ function submitOrder() {
     updateCartBadge();
 }
 
-// ============ МОДАЛЬНОЕ ОКНО ТОВАРА (С ВОЗМОЖНОСТЬЮ ДОБАВЛЯТЬ НЕСКОЛЬКО РАЗ) ============
+// ============ РЕЖИМ МЕНЕДЖЕРА (скрытый доступ по ссылке) ============
+
+// Проверка специальной ссылки для входа в режим менеджера
+function checkManagerLink() {
+    const hash = window.location.hash;
+    if (hash && hash.includes('manager:')) {
+        const password = hash.split('manager:')[1];
+        if (password === 'Amigo2025') {
+            // Запрашиваем токен у менеджера
+            const token = prompt('🔐 Введите GitHub токен для сохранения цен:\n\nТокен можно получить в GitHub:\nSettings → Developer settings → Personal access tokens → Generate new token\n\nНужно отметить галочку "repo"');
+            if (token && token.startsWith('ghp_')) {
+                localStorage.setItem('amigoopt_github_token', token);
+                githubConfig.token = token;
+                isManagerMode = true;
+                localStorage.setItem('amigoopt_manager_mode', 'true');
+                alert('✅ Режим менеджера активирован!\n\nТеперь вы можете менять цены, нажав на кнопку "📊 Изменить цену" под товаром.');
+                renderShopPage();
+                if (currentPage === 'contacts') renderContactsPage();
+            } else if (token) {
+                alert('❌ Неверный токен! Токен должен начинаться с "ghp_"');
+            }
+            window.location.hash = '';
+        }
+    }
+    
+    if (!isManagerMode && localStorage.getItem('amigoopt_manager_mode') === 'true') {
+        isManagerMode = true;
+        const savedToken = localStorage.getItem('amigoopt_github_token');
+        if (savedToken) {
+            githubConfig.token = savedToken;
+        }
+        renderShopPage();
+        if (currentPage === 'contacts') renderContactsPage();
+    }
+}
+
+// Выход из режима менеджера
+function exitManagerMode() {
+    isManagerMode = false;
+    localStorage.removeItem('amigoopt_manager_mode');
+    localStorage.removeItem('amigoopt_github_token');
+    githubConfig.token = null;
+    alert('🔒 Режим менеджера выключен');
+    renderShopPage();
+    if (currentPage === 'contacts') renderContactsPage();
+}
+
+// Функция открытия модального окна для изменения цен
+function openPriceEditor(product) {
+    if (!isManagerMode) return;
+    
+    currentEditProduct = product;
+    
+    const ranges = {
+        '3000-10000': product.priceRanges['3000-10000'] || 0,
+        '10000-30000': product.priceRanges['10000-30000'] || 0,
+        '30000-50000': product.priceRanges['30000-50000'] || 0,
+        '50000-100000': product.priceRanges['50000-100000'] || 0,
+        '100000-999999': product.priceRanges['100000-999999'] || 0
+    };
+    
+    const modal = document.getElementById('modalOverlay');
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📊 Редактирование цен</h3>
+                <button class="close-modal" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <h4 style="margin-bottom:15px;">${escapeHtml(product.name)}</h4>
+                
+                <div class="price-edit-group">
+                    <label>💰 3 000 - 10 000 ₽:</label>
+                    <input type="number" id="price_3000" value="${ranges['3000-10000']}" class="price-edit-input">
+                </div>
+                <div class="price-edit-group">
+                    <label>💰 10 000 - 30 000 ₽:</label>
+                    <input type="number" id="price_10000" value="${ranges['10000-30000']}" class="price-edit-input">
+                </div>
+                <div class="price-edit-group">
+                    <label>💰 30 000 - 50 000 ₽:</label>
+                    <input type="number" id="price_30000" value="${ranges['30000-50000']}" class="price-edit-input">
+                </div>
+                <div class="price-edit-group">
+                    <label>💰 50 000 - 100 000 ₽:</label>
+                    <input type="number" id="price_50000" value="${ranges['50000-100000']}" class="price-edit-input">
+                </div>
+                <div class="price-edit-group">
+                    <label>💰 100 000+ ₽:</label>
+                    <input type="number" id="price_100000" value="${ranges['100000-999999']}" class="price-edit-input">
+                </div>
+                
+                <div class="price-edit-buttons">
+                    <button class="save-price-btn" onclick="savePriceChanges()">💾 Сохранить цены</button>
+                    <button class="cancel-price-btn" onclick="closeModal()">Отмена</button>
+                </div>
+            </div>
+        </div>
+    `;
+    modal.style.display = 'block';
+}
+
+// Функция сохранения измененных цен
+function savePriceChanges() {
+    if (!currentEditProduct) return;
+    
+    const newPrices = {
+        "3000-10000": parseInt(document.getElementById('price_3000')?.value) || 0,
+        "10000-30000": parseInt(document.getElementById('price_10000')?.value) || 0,
+        "30000-50000": parseInt(document.getElementById('price_30000')?.value) || 0,
+        "50000-100000": parseInt(document.getElementById('price_50000')?.value) || 0,
+        "100000-999999": parseInt(document.getElementById('price_100000')?.value) || 0
+    };
+    
+    // Обновляем цены в текущем объекте
+    currentEditProduct.priceRanges = newPrices;
+    
+    // Обновляем в глобальном массиве products
+    const index = products.findIndex(p => p.id === currentEditProduct.id);
+    if (index !== -1) {
+        products[index].priceRanges = newPrices;
+    }
+    
+    // Сохраняем в localStorage
+    const priceEdits = JSON.parse(localStorage.getItem('amigoopt_price_edits') || '{}');
+    priceEdits[currentEditProduct.id] = newPrices;
+    localStorage.setItem('amigoopt_price_edits', JSON.stringify(priceEdits));
+    
+    closeModal();
+    
+    // Обновляем отображение
+    if (currentPage === 'shop') renderShopPage();
+    if (currentPage === 'sales') renderSalesPage();
+    if (currentPage === 'cart') {
+        checkAndUpdateRangeByTotal();
+        renderCartPage();
+    }
+    
+    // Показываем уведомление
+    showSaveNotification();
+}
+
+// Уведомление о необходимости сохранить изменения
+function showSaveNotification() {
+    let notification = document.getElementById('managerNotification');
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.id = 'managerNotification';
+        notification.className = 'manager-notification';
+        document.body.appendChild(notification);
+    }
+    
+    notification.innerHTML = `
+        <div class="notification-content">
+            <span>✏️ Цены изменены!</span>
+            <button onclick="saveAllToGitHub()" class="save-github-btn">💾 Сохранить на GitHub</button>
+            <button onclick="closeNotification()" class="close-notif-btn">×</button>
+        </div>
+    `;
+    notification.style.display = 'block';
+    
+    setTimeout(() => {
+        if (notification) notification.style.display = 'none';
+    }, 15000);
+}
+
+function closeNotification() {
+    const notification = document.getElementById('managerNotification');
+    if (notification) notification.style.display = 'none';
+}
+
+// Сохранение всех изменений на GitHub
+async function saveAllToGitHub() {
+    if (!githubConfig.token) {
+        alert('❌ Нет GitHub токена. Войдите в режим менеджера заново по ссылке.');
+        return;
+    }
+    
+    if (!githubConfig.repo) {
+        alert('❌ Не удалось определить репозиторий. Убедитесь, что сайт открыт через GitHub Pages.');
+        return;
+    }
+    
+    const savedEdits = JSON.parse(localStorage.getItem('amigoopt_price_edits') || '{}');
+    
+    if (Object.keys(savedEdits).length === 0) {
+        alert('Нет изменений для сохранения.');
+        return;
+    }
+    
+    // Создаем обновленный data.json
+    const updatedData = {
+        shopName: shopConfig.shopName,
+        contactPhone: shopConfig.contactPhone,
+        managerTgId: shopConfig.managerTgId,
+        botToken: shopConfig.botToken,
+        categories: categories,
+        products: products.map(p => {
+            if (savedEdits[p.id]) {
+                return { ...p, priceRanges: savedEdits[p.id] };
+            }
+            return p;
+        })
+    };
+    
+    const url = `https://api.github.com/repos/${githubConfig.repo}/contents/data.json`;
+    
+    try {
+        console.log('Сохраняем на GitHub:', url);
+        
+        // Получаем текущий файл и его SHA
+        const getResponse = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${githubConfig.token}`,
+                'Accept': 'application/vnd.github+json'
+            }
+        });
+        
+        if (!getResponse.ok) {
+            throw new Error(`HTTP ${getResponse.status}: ${getResponse.statusText}`);
+        }
+        
+        const fileData = await getResponse.json();
+        const sha = fileData.sha;
+        
+        // Кодируем содержимое в base64
+        const content = btoa(unescape(encodeURIComponent(JSON.stringify(updatedData, null, 2))));
+        
+        // Обновляем файл
+        const updateResponse = await fetch(url, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${githubConfig.token}`,
+                'Accept': 'application/vnd.github+json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message: `Обновление цен от ${new Date().toLocaleString('ru-RU')}`,
+                content: content,
+                sha: sha
+            })
+        });
+        
+        const result = await updateResponse.json();
+        
+        if (updateResponse.ok) {
+            alert('✅ Цены успешно сохранены на GitHub!\nИзменения сразу видны пользователям.');
+            localStorage.removeItem('amigoopt_price_edits');
+            closeNotification();
+        } else {
+            console.error('Ошибка GitHub API:', result);
+            alert(`❌ Ошибка: ${result.message}\n\nПроверьте токен и права доступа.`);
+        }
+    } catch(error) {
+        console.error('Ошибка:', error);
+        alert('⚠️ Ошибка соединения с GitHub. Попробуйте еще раз.');
+    }
+}
+
+// Функция ручного экспорта (запасной вариант)
+function exportPriceChanges() {
+    const savedEdits = JSON.parse(localStorage.getItem('amigoopt_price_edits') || '{}');
+    
+    if (Object.keys(savedEdits).length === 0) {
+        alert('Нет сохраненных изменений цен.');
+        return;
+    }
+    
+    const updatedData = {
+        shopName: shopConfig.shopName,
+        contactPhone: shopConfig.contactPhone,
+        managerTgId: shopConfig.managerTgId,
+        botToken: shopConfig.botToken,
+        categories: categories,
+        products: products.map(p => {
+            if (savedEdits[p.id]) {
+                return { ...p, priceRanges: savedEdits[p.id] };
+            }
+            return p;
+        })
+    };
+    
+    const jsonStr = JSON.stringify(updatedData, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'data.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    alert('✅ Файл data.json скачан!\n\n📌 Теперь загрузите его в репозиторий через GitHub.com');
+}
+
+// ============ ОТОБРАЖЕНИЕ ============
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function renderProductCard(product) {
+    let displayPrice = product.priceRanges['100000-999999'] || Object.values(product.priceRanges)[0];
+    
+    const productJson = JSON.stringify(product).replace(/'/g, "&#39;").replace(/"/g, '&quot;');
+    
+    const rightContent = product.sale 
+        ? '<span class="sale-badge">🔥 SALE</span>' 
+        : '<span class="sale-placeholder"></span>';
+    
+    let managerButton = '';
+    if (isManagerMode) {
+        managerButton = `<button class="price-edit-btn" onclick="event.stopPropagation(); openPriceEditor(${productJson})">📊 Изменить цену</button>`;
+    }
+    
+    return `
+        <div class="product-card" onclick='openProductModal(${productJson})'>
+            <img src="${product.photo}" class="product-image" onerror="this.src='https://placehold.co/300x200/eee/999?text=No+Image'">
+            <div class="product-info">
+                <div class="product-name">${escapeHtml(product.name)}</div>
+                <div class="product-price-wrapper">
+                    <span class="product-price">${displayPrice}₽</span>
+                    ${rightContent}
+                </div>
+                <div class="product-buttons">
+                    <button class="open-btn">Открыть</button>
+                    ${managerButton}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderShopPage() {
+    if (!products.length) {
+        document.getElementById('mainContent').innerHTML = '<div style="text-align:center; padding:50px">Загрузка товаров...</div>';
+        return;
+    }
+    
+    const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
+    let filtered = currentCategory === 'all' ? products : products.filter(p => p.category === currentCategory);
+    if (searchTerm) filtered = filtered.filter(p => p.name.toLowerCase().includes(searchTerm) || (p.description && p.description.toLowerCase().includes(searchTerm)));
+    
+    const popular = filtered.filter(p => p.popular);
+    const other = filtered.filter(p => !p.popular);
+    
+    let html = `<div class="categories-grid"><div class="category-chip ${currentCategory === 'all' ? 'active' : ''}" data-cat="all">Все</div>`;
+    categories.forEach(cat => { 
+        html += `<div class="category-chip ${currentCategory === cat ? 'active' : ''}" data-cat="${cat}">${escapeHtml(cat)}</div>`; 
+    });
+    html += `</div>`;
+    
+    if (currentPriceRange && cart.length > 0) {
+        html += `<div class="range-notification">📊 Ваша корзина в диапазоне: ${getRangeLabel(currentPriceRange)}</div>`;
+    }
+    
+    if (popular.length) html += `<h2 class="section-title">⭐ Популярное</h2><div class="products-grid">${popular.map(p => renderProductCard(p)).join('')}</div>`;
+    if (other.length) html += `<h2 class="section-title">📦 Все товары</h2><div class="products-grid">${other.map(p => renderProductCard(p)).join('')}</div>`;
+    if (!filtered.length) html = `<div style="text-align:center;padding:50px">🔍 Ничего не найдено</div>`;
+    
+    document.getElementById('mainContent').innerHTML = html;
+    
+    document.querySelectorAll('.category-chip').forEach(el => {
+        el.addEventListener('click', () => { 
+            currentCategory = el.dataset.cat; 
+            renderShopPage(); 
+        });
+    });
+}
+
+function renderSalesPage() {
+    if (!products.length) {
+        document.getElementById('mainContent').innerHTML = '<div style="text-align:center; padding:50px">Загрузка...</div>';
+        return;
+    }
+    const saleProducts = products.filter(p => p.sale === true);
+    let html = `<h2 class="section-title">🔥 Акции</h2><div class="products-grid">${saleProducts.length ? saleProducts.map(p => renderProductCard(p)).join('') : '<div style="text-align:center;padding:50px">Нет товаров по акции</div>'}</div>`;
+    document.getElementById('mainContent').innerHTML = html;
+}
+
+function renderCartPage() {
+    if (!cart.length) { 
+        document.getElementById('mainContent').innerHTML = `
+            <div style="min-height: 60vh; display: flex; align-items: center; justify-content: center;">
+                <div class="empty-cart">🛒 Корзина пуста</div>
+            </div>
+        `; 
+        return; 
+    }
+    
+    let total = getCartTotal();
+    const currentRangeLabel = currentPriceRange ? getRangeLabel(currentPriceRange) : 'не выбран';
+    
+    let html = `<h2 class="section-title">🛒 Корзина</h2>`;
+    html += `<div class="range-notification">📊 Текущий ценовой диапазон корзины: <strong>${currentRangeLabel}</strong><br>💰 Сумма корзины: ${total} ₽</div>`;
+    html += `<div class="cart-items-list">`;
+    
+    cart.forEach((item, idx) => {
+        const itemTotal = item.price * item.quantity;
+        const appliedRangeLabel = item.appliedRange ? getRangeLabel(item.appliedRange) : (item.priceRangeKey ? getRangeLabel(item.priceRangeKey) : currentRangeLabel);
+        
+        html += `
+            <div class="cart-item">
+                <div class="cart-item-info">
+                    <div class="cart-item-title">${escapeHtml(item.name)}</div>
+                    <div class="cart-item-price">${item.price}₽ × ${item.quantity} = ${itemTotal}₽</div>
+                    <div class="cart-item-details">
+                        ${item.selectedRange ? `Выбранный диапазон: ${item.selectedRange}<br>` : ''}
+                        <small>📊 Диапазон корзины: ${appliedRangeLabel}</small>
+                        ${item.selectedVariant ? `<br>🎨 ${escapeHtml(item.selectedVariant)}` : ''}
+                    </div>
+                </div>
+                <div class="cart-item-controls">
+                    <button class="quantity-btn" data-idx="${idx}" data-delta="-1">−</button>
+                    <span>${item.quantity}</span>
+                    <button class="quantity-btn" data-idx="${idx}" data-delta="1">+</button>
+                    <button class="remove-item" data-idx="${idx}">🗑️</button>
+                </div>
+            </div>
+        `;
+    });
+    html += `</div><div class="cart-total"><h3>Итого: ${total}₽</h3><button class="checkout-btn" id="checkoutBtn">✅ Оформить заказ</button></div>`;
+    document.getElementById('mainContent').innerHTML = html;
+    
+    document.querySelectorAll('.quantity-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const idx = parseInt(btn.dataset.idx);
+            const delta = parseInt(btn.dataset.delta);
+            const newQty = cart[idx].quantity + delta;
+            if (newQty <= 0) cart.splice(idx, 1);
+            else cart[idx].quantity = newQty;
+            saveCart();
+            
+            const wasUpdated = checkAndUpdateRangeByTotal();
+            if (wasUpdated) {
+                alert(`📊 Сумма корзины изменилась. Цены пересчитаны для диапазона ${getRangeLabel(currentPriceRange)}`);
+            }
+            renderCartPage();
+            updateCartBadge();
+            if (currentPage === 'shop') renderShopPage();
+        });
+    });
+    
+    document.querySelectorAll('.remove-item').forEach(btn => {
+        btn.addEventListener('click', () => { 
+            cart.splice(parseInt(btn.dataset.idx), 1); 
+            saveCart(); 
+            checkAndUpdateRangeByTotal();
+            renderCartPage(); 
+            updateCartBadge();
+            if (currentPage === 'shop') renderShopPage();
+        });
+    });
+    
+    const checkoutBtn = document.getElementById('checkoutBtn');
+    if (checkoutBtn) {
+        checkoutBtn.addEventListener('click', openCheckoutForm);
+    }
+}
+
+function renderContactsPage() {
+    const phone = shopConfig.contactPhone || "+7 (999) 123-45-67";
+    
+    let managerInfo = '';
+    if (isManagerMode) {
+        managerInfo = `
+            <div class="manager-panel">
+                <div class="manager-header">🔧 Режим менеджера активен</div>
+                <div class="manager-actions">
+                    <button onclick="saveAllToGitHub()" class="manager-save-btn">💾 Сохранить все изменения на GitHub</button>
+                    <button onclick="exitManagerMode()" class="manager-exit-btn">🔒 Выйти из режима менеджера</button>
+                </div>
+                <p class="manager-hint">Совет: нажмите "Сохранить" после изменения цен на товарах</p>
+            </div>
+        `;
+    }
+    
+    document.getElementById('mainContent').innerHTML = `
+        <div class="contacts-page">
+            <h2 class="section-title">📞 Контакты</h2>
+            <div class="contact-phone">${phone}</div>
+            <p>Свяжитесь с нами любым удобным способом</p>
+            <p style="margin-top:20px; color:#888">Работаем ежедневно 10:00-21:00</p>
+            ${managerInfo}
+        </div>
+    `;
+}
+
+// ============ МОДАЛЬНОЕ ОКНО ТОВАРА ============
 function openProductModal(product) {
     currentProduct = product;
     selectedRange = null;
@@ -482,7 +993,7 @@ function openProductModal(product) {
     let rangesHtml = '<div class="range-options">';
     for (const range of priceRangesConfig) {
         const price = product.priceRanges[range.key];
-        if (price !== undefined) {
+        if (price !== undefined && price > 0) {
             rangesHtml += `<button class="range-btn" data-range="${range.key}" data-price="${price}">${rangeMap[range.key]} — ${price}₽/шт</button>`;
         }
     }
@@ -508,7 +1019,7 @@ function openProductModal(product) {
             </div>
             <div class="modal-body">
                 <img src="${product.photo}" class="modal-image" onerror="this.src='https://placehold.co/300x200/eee/999?text=No+Image'">
-                <p style="color:#666; margin-bottom:10px;">${product.description}</p>
+                <p style="color:#666; margin-bottom:10px;">${product.description || ''}</p>
                 <div id="step1Container">
                     <div class="step-title"><span class="step-number">1</span> Выберите сумму заказа</div>
                     ${rangesHtml}
@@ -661,7 +1172,6 @@ function openProductModal(product) {
             return; 
         }
         
-        // Добавляем товар в корзину
         cart.push({
             id: product.id,
             name: product.name,
@@ -673,632 +1183,28 @@ function openProductModal(product) {
         });
         
         saveCart();
-        updateCartBadge();
         
-        // Показываем уведомление
-        alert(`✅ ${selectedQuantity} шт "${product.name}" добавлено в корзину`);
-        
-        // СБРАСЫВАЕМ выбор, чтобы пользователь мог выбрать другой вариант ТОГО ЖЕ товара
-        // Но НЕ закрываем модальное окно!
-        selectedVariant = null;
-        selectedRange = null;
-        selectedPrice = null;
-        selectedQuantity = 1;
-        
-        // Сбрасываем визуальное выделение кнопок
-        document.querySelectorAll('.range-btn').forEach(btn => btn.classList.remove('selected'));
-        if (variantInfo3) {
-            document.querySelectorAll('.variant-option').forEach(btn => btn.classList.remove('selected'));
-        }
-        
-        // Сбрасываем количество
-        const quantitySpan = document.getElementById('quantityValue');
-        if (quantitySpan) quantitySpan.textContent = '1';
-        
-        // Обновляем сумму
-        updateTotalDisplay();
-        
-        // Блокируем кнопку добавления до выбора новых параметров
-        addBtn.textContent = '⬅️ Выберите параметры';
-        addBtn.classList.add('disabled');
-        
-        // Если есть варианты, скрываем контейнер количества до выбора варианта
-        if (variantInfo3) {
-            const quantityContainer = document.getElementById('quantityContainer');
-            if (quantityContainer) quantityContainer.style.display = 'none';
-            
-            // Делаем шаг 1 снова активным
-            document.getElementById('step1Container').style.opacity = '1';
-            const step2Container = document.getElementById('step2Container');
-            if (step2Container) step2Container.style.display = 'none';
-        } else {
-            // Если нет вариантов, делаем шаг 1 снова активным
-            document.getElementById('step1Container').style.opacity = '1';
-            const quantityContainer = document.getElementById('quantityContainer');
-            if (quantityContainer) quantityContainer.style.display = 'none';
-            addBtn.textContent = '⬅️ Сначала выберите сумму';
-        }
-        
-        // Пересчитываем цены в корзине
         const wasUpdated = checkAndUpdateRangeByTotal();
-        if (wasUpdated && currentPage === 'cart') {
-            renderCartPage();
+        
+        if (wasUpdated) {
+            alert(`✅ Товар добавлен!\n\n📊 Ваша корзина теперь в диапазоне ${getRangeLabel(currentPriceRange)}. Цены пересчитаны.`);
+        } else {
+            alert('✅ Товар добавлен в корзину');
         }
+        
+        closeModal();
+        if (currentPage === 'cart') renderCartPage();
+        updateCartBadge();
     };
 }
 
 function closeModal() {
-    document.getElementById('modalOverlay').style.display = 'none';
-    document.getElementById('modalOverlay').innerHTML = '';
-}
-
-function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-function renderProductCard(product) {
-    let displayPrice = product.priceRanges['100000-999999'] || Object.values(product.priceRanges)[0];
-    
-    const productJson = JSON.stringify(product).replace(/'/g, "&#39;").replace(/"/g, '&quot;');
-    
-    const rightContent = product.sale 
-        ? '<span class="sale-badge">🔥 SALE</span>' 
-        : '<span class="sale-placeholder"></span>';
-    
-    return `
-        <div class="product-card" onclick='openProductModal(${productJson})'>
-            <img src="${product.photo}" class="product-image" onerror="this.src='https://placehold.co/300x200/eee/999?text=No+Image'">
-            <div class="product-info">
-                <div class="product-name">${escapeHtml(product.name)}</div>
-                <div class="product-price-wrapper">
-                    <span class="product-price">${displayPrice}₽</span>
-                    ${rightContent}
-                </div>
-                <button class="open-btn">Открыть</button>
-            </div>
-        </div>
-    `;
-}
-
-function renderShopPage() {
-    if (!products.length) {
-        document.getElementById('mainContent').innerHTML = '<div style="text-align:center; padding:50px">Загрузка товаров...</div>';
-        return;
-    }
-    
-    const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
-    let filtered = currentCategory === 'all' ? products : products.filter(p => p.category === currentCategory);
-    if (searchTerm) filtered = filtered.filter(p => p.name.toLowerCase().includes(searchTerm) || p.description.toLowerCase().includes(searchTerm));
-    
-    const popular = filtered.filter(p => p.popular);
-    const other = filtered.filter(p => !p.popular);
-    
-    let html = `<div class="categories-grid"><div class="category-chip ${currentCategory === 'all' ? 'active' : ''}" data-cat="all">Все</div>`;
-    categories.forEach(cat => { 
-        html += `<div class="category-chip ${currentCategory === cat ? 'active' : ''}" data-cat="${cat}">${escapeHtml(cat)}</div>`; 
-    });
-    html += `</div>`;
-    
-    if (currentPriceRange && cart.length > 0) {
-        html += `<div class="range-notification">📊 Ваша корзина в диапазоне: ${getRangeLabel(currentPriceRange)}</div>`;
-    }
-    
-    if (popular.length) html += `<h2 class="section-title">⭐ Популярное</h2><div class="products-grid">${popular.map(p => renderProductCard(p)).join('')}</div>`;
-    if (other.length) html += `<h2 class="section-title">📦 Все товары</h2><div class="products-grid">${other.map(p => renderProductCard(p)).join('')}</div>`;
-    if (!filtered.length) html = `<div style="text-align:center;padding:50px">🔍 Ничего не найдено</div>`;
-    
-    document.getElementById('mainContent').innerHTML = html;
-    
-    document.querySelectorAll('.category-chip').forEach(el => {
-        el.addEventListener('click', () => { 
-            currentCategory = el.dataset.cat; 
-            renderShopPage(); 
-        });
-    });
-}
-
-function renderSalesPage() {
-    if (!products.length) {
-        document.getElementById('mainContent').innerHTML = '<div style="text-align:center; padding:50px">Загрузка...</div>';
-        return;
-    }
-    const saleProducts = products.filter(p => p.sale === true);
-    let html = `<h2 class="section-title">🔥 Акции</h2><div class="products-grid">${saleProducts.length ? saleProducts.map(p => renderProductCard(p)).join('') : '<div style="text-align:center;padding:50px">Нет товаров по акции</div>'}</div>`;
-    document.getElementById('mainContent').innerHTML = html;
-}
-
-function renderCartPage() {
-    if (!cart.length) { 
-        document.getElementById('mainContent').innerHTML = `
-            <div style="min-height: 60vh; display: flex; align-items: center; justify-content: center;">
-                <div class="empty-cart">🛒 Корзина пуста</div>
-            </div>
-        `; 
-        return; 
-    }
-    
-    let total = getCartTotal();
-    const currentRangeLabel = currentPriceRange ? getRangeLabel(currentPriceRange) : 'не выбран';
-    
-    let html = `<h2 class="section-title">🛒 Корзина</h2>`;
-    html += `<div class="range-notification">📊 Текущий ценовой диапазон корзины: <strong>${currentRangeLabel}</strong><br>💰 Сумма корзины: ${total} ₽</div>`;
-    html += `<div class="cart-items-list">`;
-    
-    cart.forEach((item, idx) => {
-        const itemTotal = item.price * item.quantity;
-        const appliedRangeLabel = item.appliedRange ? getRangeLabel(item.appliedRange) : (item.priceRangeKey ? getRangeLabel(item.priceRangeKey) : currentRangeLabel);
-        
-        html += `
-            <div class="cart-item">
-                <div class="cart-item-info">
-                    <div class="cart-item-title">${escapeHtml(item.name)}</div>
-                    <div class="cart-item-price">${item.price}₽ × ${item.quantity} = ${itemTotal}₽</div>
-                    <div class="cart-item-details">
-                        ${item.selectedRange ? `Выбранный диапазон: ${item.selectedRange}<br>` : ''}
-                        <small>📊 Диапазон корзины: ${appliedRangeLabel}</small>
-                        ${item.selectedVariant ? `<br>🎨 ${escapeHtml(item.selectedVariant)}` : ''}
-                    </div>
-                </div>
-                <div class="cart-item-controls">
-                    <button class="quantity-btn" data-idx="${idx}" data-delta="-1">−</button>
-                    <span>${item.quantity}</span>
-                    <button class="quantity-btn" data-idx="${idx}" data-delta="1">+</button>
-                    <button class="remove-item" data-idx="${idx}">🗑️</button>
-                </div>
-            </div>
-        `;
-    });
-    html += `</div><div class="cart-total"><h3>Итого: ${total}₽</h3><button class="checkout-btn" id="checkoutBtn">✅ Оформить заказ</button></div>`;
-    document.getElementById('mainContent').innerHTML = html;
-    
-    document.querySelectorAll('.quantity-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const idx = parseInt(btn.dataset.idx);
-            const delta = parseInt(btn.dataset.delta);
-            const newQty = cart[idx].quantity + delta;
-            if (newQty <= 0) cart.splice(idx, 1);
-            else cart[idx].quantity = newQty;
-            saveCart();
-            
-            const wasUpdated = checkAndUpdateRangeByTotal();
-            if (wasUpdated) {
-                alert(`📊 Сумма корзины изменилась. Цены пересчитаны для диапазона ${getRangeLabel(currentPriceRange)}`);
-            }
-            renderCartPage();
-            updateCartBadge();
-            if (currentPage === 'shop') renderShopPage();
-        });
-    });
-    
-    document.querySelectorAll('.remove-item').forEach(btn => {
-        btn.addEventListener('click', () => { 
-            cart.splice(parseInt(btn.dataset.idx), 1); 
-            saveCart(); 
-            checkAndUpdateRangeByTotal();
-            renderCartPage(); 
-            updateCartBadge();
-            if (currentPage === 'shop') renderShopPage();
-        });
-    });
-    
-    const checkoutBtn = document.getElementById('checkoutBtn');
-    if (checkoutBtn) {
-        checkoutBtn.addEventListener('click', openCheckoutForm);
-    }
-}
-
-function renderContactsPage() {
-    const phone = shopConfig.contactPhone || "+7 (999) 123-45-67";
-    document.getElementById('mainContent').innerHTML = `
-        <div class="contacts-page">
-            <h2 class="section-title">📞 Контакты</h2>
-            <div class="contact-phone">${phone}</div>
-            <p>Свяжитесь с нами любым удобным способом</p>
-            <p style="margin-top:20px; color:#888">Работаем ежедневно 10:00-21:00</p>
-        </div>
-    `;
-}
-// ============ РЕЖИМ МЕНЕДЖЕРА (скрытый доступ по ссылке) ============
-let isManagerMode = false;
-let currentEditProduct = null;
-
-// GitHub конфигурация (хранится в отдельном файле для безопасности)
-let githubConfig = {
-    enabled: false,
-    repo: "",
-    path: "data.json",
-    token: ""
-};
-
-// Загрузка GitHub конфигурации из отдельного файла
-async function loadGithubConfig() {
-    try {
-        const response = await fetch('./github-config.json');
-        if (response.ok) {
-            githubConfig = await response.json();
-            githubConfig.enabled = true;
-            console.log('GitHub конфигурация загружена');
-        }
-    } catch(e) {
-        console.log('GitHub конфигурация не найдена, работаем в режиме ручного экспорта');
-    }
-}
-
-// Проверка специальной ссылки для входа в режим менеджера
-function checkManagerLink() {
-    const hash = window.location.hash;
-    if (hash && hash.includes('manager:')) {
-        const password = hash.split('manager:')[1];
-        if (password === 'Amigo2025') {
-            // Запрашиваем токен у менеджера
-            const token = prompt('🔐 Введите GitHub токен для сохранения цен:\n(Токен нужен один раз, он не сохранится на сервере)');
-            if (token && token.startsWith('ghp_')) {
-                localStorage.setItem('github_token', token);
-                isManagerMode = true;
-                localStorage.setItem('amigoopt_manager_mode', 'true');
-                alert('✅ Режим менеджера активирован!');
-                renderShopPage();
-                if (currentPage === 'contacts') renderContactsPage();
-            } else {
-                alert('❌ Неверный токен! Получите токен в GitHub Settings → Developer settings → Personal access tokens');
-            }
-        }
-    }
-    
-    if (!isManagerMode && localStorage.getItem('amigoopt_manager_mode') === 'true') {
-        isManagerMode = true;
-        renderShopPage();
-        if (currentPage === 'contacts') renderContactsPage();
-    }
-}
-
-
-    
-    // Проверяем localStorage при загрузке
-    if (!isManagerMode && localStorage.getItem('amigoopt_manager_mode') === 'true') {
-        isManagerMode = true;
-        if (currentPage === 'shop') renderShopPage();
-        if (currentPage === 'contacts') renderContactsPage();
-    }
-}
-
-// Выход из режима менеджера
-// Выход из режима менеджера
-function exitManagerMode() {
-    isManagerMode = false;
-    localStorage.removeItem('amigoopt_manager_mode');
-    localStorage.removeItem('github_token');
-    alert('🔒 Режим менеджера выключен');
-    renderShopPage();
-    if (currentPage === 'contacts') renderContactsPage();
-}
-
-// Функция открытия модального окна для изменения цен
-function openPriceEditor(product) {
-    if (!isManagerMode) return;
-    
-    currentEditProduct = product;
-    
-    const ranges = {
-        '3000-10000': product.priceRanges['3000-10000'] || 0,
-        '10000-30000': product.priceRanges['10000-30000'] || 0,
-        '30000-50000': product.priceRanges['30000-50000'] || 0,
-        '50000-100000': product.priceRanges['50000-100000'] || 0,
-        '100000-999999': product.priceRanges['100000-999999'] || 0
-    };
-    
     const modal = document.getElementById('modalOverlay');
-    modal.innerHTML = `
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>📊 Редактирование цен</h3>
-                <button class="close-modal" onclick="closeModal()">×</button>
-            </div>
-            <div class="modal-body">
-                <h4 style="margin-bottom:15px;">${escapeHtml(product.name)}</h4>
-                
-                <div class="price-edit-group">
-                    <label>💰 3 000 - 10 000 ₽:</label>
-                    <input type="number" id="price_3000" value="${ranges['3000-10000']}" class="price-edit-input">
-                </div>
-                <div class="price-edit-group">
-                    <label>💰 10 000 - 30 000 ₽:</label>
-                    <input type="number" id="price_10000" value="${ranges['10000-30000']}" class="price-edit-input">
-                </div>
-                <div class="price-edit-group">
-                    <label>💰 30 000 - 50 000 ₽:</label>
-                    <input type="number" id="price_30000" value="${ranges['30000-50000']}" class="price-edit-input">
-                </div>
-                <div class="price-edit-group">
-                    <label>💰 50 000 - 100 000 ₽:</label>
-                    <input type="number" id="price_50000" value="${ranges['50000-100000']}" class="price-edit-input">
-                </div>
-                <div class="price-edit-group">
-                    <label>💰 100 000+ ₽:</label>
-                    <input type="number" id="price_100000" value="${ranges['100000-999999']}" class="price-edit-input">
-                </div>
-                
-                <div class="price-edit-buttons">
-                    <button class="save-price-btn" onclick="savePriceChanges()">💾 Сохранить цены</button>
-                    <button class="cancel-price-btn" onclick="closeModal()">Отмена</button>
-                </div>
-            </div>
-        </div>
-    `;
-    modal.style.display = 'block';
-}
-
-// Функция сохранения измененных цен
-async function savePriceChanges() {
-    if (!currentEditProduct) return;
-    
-    const newPrices = {
-        "3000-10000": parseInt(document.getElementById('price_3000')?.value) || 0,
-        "10000-30000": parseInt(document.getElementById('price_10000')?.value) || 0,
-        "30000-50000": parseInt(document.getElementById('price_30000')?.value) || 0,
-        "50000-100000": parseInt(document.getElementById('price_50000')?.value) || 0,
-        "100000-999999": parseInt(document.getElementById('price_100000')?.value) || 0
-    };
-    
-    // Обновляем цены в текущем объекте
-    currentEditProduct.priceRanges = newPrices;
-    
-    // Обновляем в глобальном массиве products
-    const index = products.findIndex(p => p.id === currentEditProduct.id);
-    if (index !== -1) {
-        products[index].priceRanges = newPrices;
-    }
-    
-    // Сохраняем в localStorage
-    const priceEdits = JSON.parse(localStorage.getItem('amigoopt_price_edits') || '{}');
-    priceEdits[currentEditProduct.id] = newPrices;
-    localStorage.setItem('amigoopt_price_edits', JSON.stringify(priceEdits));
-    
-    closeModal();
-    
-    // Обновляем отображение
-    if (currentPage === 'shop') renderShopPage();
-    if (currentPage === 'sales') renderSalesPage();
-    if (currentPage === 'cart') {
-        checkAndUpdateRangeByTotal();
-        renderCartPage();
-    }
-    
-    // Показываем уведомление с кнопкой сохранения на GitHub
-    showSaveNotification();
-}
-
-// Уведомление о необходимости сохранить изменения
-function showSaveNotification() {
-    // Создаем плавающее уведомление
-    let notification = document.getElementById('managerNotification');
-    if (!notification) {
-        notification = document.createElement('div');
-        notification.id = 'managerNotification';
-        notification.className = 'manager-notification';
-        document.body.appendChild(notification);
-    }
-    
-    notification.innerHTML = `
-        <div class="notification-content">
-            <span>✏️ Цены изменены!</span>
-            <button onclick="saveAllToGitHub()" class="save-github-btn">💾 Сохранить на сервер</button>
-            <button onclick="closeNotification()" class="close-notif-btn">×</button>
-        </div>
-    `;
-    notification.style.display = 'block';
-    
-    // Автоскрытие через 10 секунд
-    setTimeout(() => {
-        if (notification) notification.style.display = 'none';
-    }, 10000);
-}
-
-function closeNotification() {
-    const notification = document.getElementById('managerNotification');
-    if (notification) notification.style.display = 'none';
-}
-
-// Сохранение всех изменений на GitHub
-async function saveAllToGitHub() {
-    const githubToken = localStorage.getItem('github_token');
-    
-    if (!githubToken) {
-        alert('❌ Нет GitHub токена. Войдите в режим менеджера заново.');
-        return;
-    }
-    
-    const savedEdits = JSON.parse(localStorage.getItem('amigoopt_price_edits') || '{}');
-    
-    if (Object.keys(savedEdits).length === 0) {
-        alert('Нет изменений для сохранения.');
-        return;
-    }
-    
-    const updatedData = {
-        shopName: shopConfig.shopName,
-        contactPhone: shopConfig.contactPhone,
-        managerTgId: shopConfig.managerTgId,
-        botToken: shopConfig.botToken,
-        categories: categories,
-        products: products.map(p => {
-            if (savedEdits[p.id]) {
-                return { ...p, priceRanges: savedEdits[p.id] };
-            }
-            return p;
-        })
-    };
-    
-    const url = `https://api.github.com/repos/${githubConfig.repo}/contents/data.json`;
-    
-    try {
-        // Получаем текущий файл и его SHA
-        const getResponse = await fetch(url, {
-            headers: {
-                'Authorization': `Bearer ${githubToken}`,
-                'Accept': 'application/vnd.github+json'
-            }
-        });
-        
-        const fileData = await getResponse.json();
-        const sha = fileData.sha;
-        
-        // Обновляем файл
-        const updateResponse = await fetch(url, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${githubToken}`,
-                'Accept': 'application/vnd.github+json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                message: `Обновление цен от ${new Date().toLocaleString('ru-RU')}`,
-                content: btoa(unescape(encodeURIComponent(JSON.stringify(updatedData, null, 2)))),
-                sha: sha
-            })
-        });
-        
-        const result = await updateResponse.json();
-        
-        if (updateResponse.ok) {
-            alert('✅ Цены успешно сохранены на GitHub!');
-            localStorage.removeItem('amigoopt_price_edits');
-            closeNotification();
-        } else {
-            alert(`❌ Ошибка: ${result.message}\n\nПроверьте токен и права доступа.`);
-        }
-    } catch(error) {
-        console.error(error);
-        alert('⚠️ Ошибка соединения. Попробуйте еще раз.');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.innerHTML = '';
     }
 }
-
-// Функция ручного экспорта (запасной вариант)
-function exportPriceChanges() {
-    const savedEdits = JSON.parse(localStorage.getItem('amigoopt_price_edits') || '{}');
-    
-    if (Object.keys(savedEdits).length === 0) {
-        alert('Нет сохраненных изменений цен.');
-        return;
-    }
-    
-    const updatedData = {
-        shopName: shopConfig.shopName,
-        contactPhone: shopConfig.contactPhone,
-        managerTgId: shopConfig.managerTgId,
-        botToken: shopConfig.botToken,
-        categories: categories,
-        products: products.map(p => {
-            if (savedEdits[p.id]) {
-                return { ...p, priceRanges: savedEdits[p.id] };
-            }
-            return p;
-        })
-    };
-    
-    const jsonStr = JSON.stringify(updatedData, null, 2);
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'data.json';
-    a.click();
-    URL.revokeObjectURL(url);
-    
-    alert('✅ Файл data.json скачан!\n\n📌 Загрузите его на сервер через файловый менеджер хостинга.');
-}
-
-// Обновляем renderProductCard
-function renderProductCard(product) {
-    let displayPrice = product.priceRanges['100000-999999'] || Object.values(product.priceRanges)[0];
-    
-    const productJson = JSON.stringify(product).replace(/'/g, "&#39;").replace(/"/g, '&quot;');
-    
-    const rightContent = product.sale 
-        ? '<span class="sale-badge">🔥 SALE</span>' 
-        : '<span class="sale-placeholder"></span>';
-    
-    // Кнопка управления ценами (только для менеджера, видна невооруженным глазом)
-    let managerButton = '';
-    if (isManagerMode) {
-        managerButton = `<button class="price-edit-btn" onclick="event.stopPropagation(); openPriceEditor(${productJson})">📊 Изменить цену</button>`;
-    }
-    
-    return `
-        <div class="product-card" onclick='openProductModal(${productJson})'>
-            <img src="${product.photo}" class="product-image" onerror="this.src='https://placehold.co/300x200/eee/999?text=No+Image'">
-            <div class="product-info">
-                <div class="product-name">${escapeHtml(product.name)}</div>
-                <div class="product-price-wrapper">
-                    <span class="product-price">${displayPrice}₽</span>
-                    ${rightContent}
-                </div>
-                <div class="product-buttons">
-                    <button class="open-btn">Открыть</button>
-                    ${managerButton}
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-// Обновляем ContactsPage (без кнопки, только информация)
-function renderContactsPage() {
-    const phone = shopConfig.contactPhone || "+7 (999) 123-45-67";
-    
-    let managerInfo = '';
-    if (isManagerMode) {
-        managerInfo = `
-            <div class="manager-panel">
-                <div class="manager-header">🔧 Режим менеджера активен</div>
-                <div class="manager-actions">
-                    <button onclick="saveAllToGitHub()" class="manager-save-btn">💾 Сохранить все изменения на сервер</button>
-                    <button onclick="exitManagerMode()" class="manager-exit-btn">🔒 Выйти из режима менеджера</button>
-                </div>
-                <p class="manager-hint">Совет: нажмите "Сохранить" после изменения цен на товарах</p>
-            </div>
-        `;
-    }
-    
-    document.getElementById('mainContent').innerHTML = `
-        <div class="contacts-page">
-            <h2 class="section-title">📞 Контакты</h2>
-            <div class="contact-phone">${phone}</div>
-            <p>Свяжитесь с нами любым удобным способом</p>
-            <p style="margin-top:20px; color:#888">Работаем ежедневно 10:00-21:00</p>
-            ${managerInfo}
-        </div>
-    `;
-}
-// Автоматически получаем имя репозитория из URL страницы
-function getRepoInfo() {
-    // GitHub Pages URL выглядит так: https://username.github.io/reponame/
-    const hostname = window.location.hostname;
-    if (hostname.includes('github.io')) {
-        const parts = hostname.split('.');
-        const username = parts[0];
-        // Получаем имя репозитория из пути
-        const pathParts = window.location.pathname.split('/');
-        const reponame = pathParts[1] || '';
-        return { username, reponame };
-    }
-    return null;
-}
-
-// Глобальный объект с информацией о репозитории
-const repoInfo = getRepoInfo();
-if (repoInfo) {
-    githubConfig.repo = `${repoInfo.username}/${repoInfo.reponame}`;
-    githubConfig.path = "data.json";
-    console.log('Репозиторий определен:', githubConfig.repo);
-}
-
-// Инициализация режима менеджера
-loadGithubConfig();
-checkManagerLink();
 
 // ============ ЗАПУСК ============
 loadData();
