@@ -503,7 +503,7 @@ function checkManagerLink() {
     if (hash && hash.includes('manager:')) {
         const password = hash.split('manager:')[1];
         if (password === 'Amigo2025') {
-            const token = prompt('🔐 Введите GitHub токен для сохранения цен:\n\nТокен можно получить в GitHub:\nSettings → Developer settings → Personal access tokens → Generate new token\n\nНужно отметить галочку "repo"');
+            const token = prompt('🔐 Введите  токен для сохранения цен');
             if (token && token.startsWith('ghp_')) {
                 localStorage.setItem('amigoopt_github_token', token);
                 githubConfig.token = token;
