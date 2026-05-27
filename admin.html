@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AmigoOPT - Админ панель</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            margin-bottom: 15px;
+            color: #1a1a2e;
+            font-size: 18px;
+            border-left: 4px solid #FFD700;
+            padding-left: 12px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 13px;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            font-size: 14px;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #FFD700;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        
+        .btn-primary {
+            background: #1a1a2e;
+            color: #FFD700;
+        }
+        
+        .btn-success {
+            background: #4caf50;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #ff4444;
+            color: white;
+        }
+        
+        .btn-warning {
+            background: #ff9800;
+            color: white;
+        }
+        
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        
+        .products-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .products-table th,
+        .products-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .products-table th {
+            background: #f5f5f5;
+            font-weight: 600;
+        }
+        
+        .product-photo {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .tab-btn {
+            padding: 12px 24px;
+            background: #e0e0e0;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .tab-btn.active {
+            background: #1a1a2e;
+            color: #FFD700;
+        }
+        
+        .tab-pane {
+            display: none;
+        }
+        
+        .tab-pane.active {
+            display: block;
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        
+        .status.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            display: block;
+        }
+        
+        .price-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .price-row label {
+            width: 130px;
+            font-size: 12px;
+        }
+        
+        .price-row input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        
+        .search-box {
+            margin-bottom: 15px;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 30px;
+        }
+        
+        .categories-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .category-tag {
+            background: #e0e0e0;
+            padding: 6px 15px;
+            border-radius: 30px;
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .category-tag button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #ff4444;
+            font-size: 16px;
+        }
+        
+        .add-category {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .add-category input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 30px;
+        }
+        
+        .flavors-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .flavor-tag {
+            background: #e0e0e0;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .flavor-tag button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #ff4444;
+        }
+        
+        .add-flavor {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+        }
+        
+        .add-flavor input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+        }
+        
+        .add-flavor button {
+            padding: 8px 15px;
+            background: #1a1a2e;
+            color: #FFD700;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        
+        hr {
+            margin: 20px 0;
+            border: none;
+            border-top: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Вход -->
+    <div id="loginCard" class="card">
+        <h2>🔐 Вход в админ-панель</h2>
+        <div class="form-group">
+            <label>Пароль</label>
+            <input type="password" id="adminPassword" placeholder="Введите пароль">
+        </div>
+        <button class="btn btn-primary" onclick="checkLogin()">Войти</button>
+    </div>
+    
+    <!-- Админ панель -->
+    <div id="adminPanel" style="display: none;">
+        <div class="card">
+            <h2>📦 AmigoOPT - Управление магазином</h2>
+            
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="products">📋 Товары</button>
+                <button class="tab-btn" data-tab="add">➕ Добавить товар</button>
+                <button class="tab-btn" data-tab="categories">🏷️ Категории</button>
+                <button class="tab-btn" data-tab="settings">⚙️ Настройки</button>
+            </div>
+            
+            <!-- Вкладка: Товары -->
+            <div id="tabProducts" class="tab-pane active">
+                <div class="search-box">
+                    <input type="text" id="searchProduct" placeholder="🔍 Поиск товаров..." onkeyup="filterProducts()">
+                </div>
+                <div id="productsList"></div>
+            </div>
+            
+            <!-- Вкладка: Добавить товар -->
+            <div id="tabAdd" class="tab-pane">
+                <form id="productForm">
+                    <div class="form-group">
+                        <label>Название товара *</label>
+                        <input type="text" id="productName" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Описание</label>
+                        <textarea id="productDesc" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Категория *</label>
+                            <select id="productCategory"></select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Акция</label>
+                            <select id="productSale">
+                                <option value="false">Нет</option>
+                                <option value="true">🔥 Акция</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Фото (ссылка)</label>
+                        <input type="text" id="productPhoto" placeholder="https://...">
+                        <small style="color:#888">Загрузите фото на postimages.org или imgbb.com и вставьте ссылку</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Цены (для разных сумм заказа)</label>
+                        <div class="price-row">
+                            <label>3 000 - 10 000 ₽:</label>
+                            <input type="number" id="price1" placeholder="Цена за шт">
+                        </div>
+                        <div class="price-row">
+                            <label>10 000 - 30 000 ₽:</label>
+                            <input type="number" id="price2" placeholder="Цена за шт">
+                        </div>
+                        <div class="price-row">
+                            <label>30 000 - 50 000 ₽:</label>
+                            <input type="number" id="price3" placeholder="Цена за шт">
+                        </div>
+                        <div class="price-row">
+                            <label>50 000 - 100 000 ₽:</label>
+                            <input type="number" id="price4" placeholder="Цена за шт">
+                        </div>
+                        <div class="price-row">
+                            <label>100 000+ ₽:</label>
+                            <input type="number" id="price5" placeholder="Цена за шт">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Варианты (вкусы/цвета/сопротивления)</label>
+                        <div id="variantsList" class="flavors-list"></div>
+                        <div class="add-flavor">
+                            <input type="text" id="newVariant" placeholder="Например: Клубника">
+                            <button type="button" onclick="addVariant()">➕ Добавить</button>
+                        </div>
+                        <small style="color:#888">Для электронок — вкусы, для под-систем — цвета, для испарителей — сопротивления</small>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success">➕ Добавить товар</button>
+                </form>
+            </div>
+            
+            <!-- Вкладка: Категории -->
+            <div id="tabCategories" class="tab-pane">
+                <h3 style="margin-bottom: 15px;">📂 Управление категориями</h3>
+                
+                <div class="categories-list" id="categoriesList"></div>
+                
+                <div class="add-category">
+                    <input type="text" id="newCategory" placeholder="Название новой категории">
+                    <button class="btn btn-primary" onclick="addCategory()">➕ Добавить категорию</button>
+                </div>
+                
+                <hr>
+                
+                <div class="form-group">
+                    <label>При удалении категории товары в ней:</label>
+                    <select id="deleteCategoryAction">
+                        <option value="delete">Удалить товары</option>
+                        <option value="move">Переместить в "Без категории"</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Вкладка: Настройки -->
+            <div id="tabSettings" class="tab-pane">
+                <div class="form-group">
+                    <label>GitHub токен</label>
+                    <input type="password" id="githubToken" placeholder="ghp_...">
+                    <button class="btn btn-primary btn-sm" onclick="saveGithubToken()">💾 Сохранить токен</button>
+                </div>
+                
+                <hr>
+                
+                <div class="form-group">
+                    <label>Телефон магазина</label>
+                    <input type="text" id="shopPhone" placeholder="+7 (999) 123-45-67">
+                </div>
+                
+                <div class="form-group">
+                    <label>Telegram ID менеджера</label>
+                    <input type="text" id="managerId" placeholder="5404907427">
+                </div>
+                
+                <button class="btn btn-primary" onclick="saveSettings()">💾 Сохранить настройки</button>
+                
+                <hr>
+                
+                <button class="btn btn-warning" onclick="exportAllData()">📤 Экспортировать данные (data.json)</button>
+                <button class="btn btn-success" onclick="saveToGitHub()" style="margin-left: 10px;">💾 Сохранить на GitHub</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ============ ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ============
+    let products = [];
+    let categories = ["Электронки", "Жидкости", "Под-системы", "Испарители", "Картриджи", "Снюс"];
+    let shopConfig = {};
+    let currentVariants = [];
+    
+    let githubConfig = {
+        repo: "",
+        token: null
+    };
+    
+    // ============ ОПРЕДЕЛЕНИЕ РЕПОЗИТОРИЯ ============
+    function getRepoInfo() {
+        const hostname = window.location.hostname;
+        if (hostname.includes('github.io')) {
+            const username = hostname.split('.')[0];
+            const pathParts = window.location.pathname.split('/');
+            const reponame = pathParts[1] || '';
+            return { username, reponame };
+        }
+        return null;
+    }
+    
+    // ============ ВХОД ============
+    function checkLogin() {
+        const password = document.getElementById('adminPassword').value;
+        if (password === 'Amigo2025') {
+            document.getElementById('loginCard').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'block';
+            loadData();
+            setupTabs();
+        } else {
+            alert('❌ Неверный пароль!');
+        }
+    }
+    
+    // ============ ЗАГРУЗКА ДАННЫХ ============
+    async function loadData() {
+        try {
+            const response = await fetch('./data.json?' + Date.now());
+            if (response.ok) {
+                const data = await response.json();
+                products = data.products || [];
+                if (data.categories && data.categories.length) {
+                    categories = data.categories;
+                }
+                shopConfig = {
+                    shopName: data.shopName || 'AmigoOPT',
+                    contactPhone: data.contactPhone || '+7 (968) 890-07-44',
+                    managerTgId: data.managerTgId || '5404907427',
+                    botToken: data.botToken || ''
+                };
+            }
+        } catch(e) {
+            console.log('Новый файл data.json будет создан');
+        }
+        
+        // Загружаем токен
+        const savedToken = localStorage.getItem('amigoopt_github_token');
+        if (savedToken) {
+            githubConfig.token = savedToken;
+            document.getElementById('githubToken').value = savedToken;
+        }
+        
+        const repoInfo = getRepoInfo();
+        if (repoInfo && repoInfo.reponame) {
+            githubConfig.repo = `${repoInfo.username}/${repoInfo.reponame}`;
+        }
+        
+        // Заполняем настройки
+        document.getElementById('shopPhone').value = shopConfig.contactPhone || '+7 (968) 890-07-44';
+        document.getElementById('managerId').value = shopConfig.managerTgId || '5404907427';
+        
+        // Заполняем select категорий
+        updateCategorySelect();
+        
+        renderProductsList();
+        renderCategoriesList();
+    }
+    
+    function updateCategorySelect() {
+        const select = document.getElementById('productCategory');
+        if (select) {
+            select.innerHTML = categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+        }
+    }
+    
+    // ============ УПРАВЛЕНИЕ КАТЕГОРИЯМИ ============
+    function renderCategoriesList() {
+        const container = document.getElementById('categoriesList');
+        if (!container) return;
+        
+        if (categories.length === 0) {
+            container.innerHTML = '<small style="color:#888">Нет категорий. Добавьте первую!</small>';
+            return;
+        }
+        
+        container.innerHTML = categories.map((cat, i) => `
+            <span class="category-tag">
+                ${escapeHtml(cat)}
+                <button onclick="deleteCategory('${cat}', ${i})">×</button>
+            </span>
+        `).join('');
+    }
+    
+    function addCategory() {
+        const input = document.getElementById('newCategory');
+        const newCat = input.value.trim();
+        
+        if (!newCat) {
+            alert('Введите название категории');
+            return;
+        }
+        
+        if (categories.includes(newCat)) {
+            alert('Такая категория уже существует');
+            return;
+        }
+        
+        categories.push(newCat);
+        updateCategorySelect();
+        renderCategoriesList();
+        
+        input.value = '';
+        alert(`✅ Категория "${newCat}" добавлена! Не забудьте сохранить изменения.`);
+    }
+    
+    function deleteCategory(category, index) {
+        // Проверяем, есть ли товары в этой категории
+        const productsInCategory = products.filter(p => p.category === category);
+        
+        if (productsInCategory.length > 0) {
+            const action = document.getElementById('deleteCategoryAction').value;
+            
+            if (action === 'delete') {
+                if (confirm(`В категории "${category}" есть ${productsInCategory.length} товаров. Удалить их все?`)) {
+                    // Удаляем товары
+                    products = products.filter(p => p.category !== category);
+                } else {
+                    return;
+                }
+            } else {
+                // Перемещаем в "Без категории" или первую категорию
+                const defaultCategory = categories[0] || 'Без категории';
+                if (confirm(`Переместить ${productsInCategory.length} товаров из "${category}" в "${defaultCategory}"?`)) {
+                    products = products.map(p => {
+                        if (p.category === category) {
+                            return { ...p, category: defaultCategory };
+                        }
+                        return p;
+                    });
+                } else {
+                    return;
+                }
+            }
+        }
+        
+        // Удаляем категорию
+        categories.splice(index, 1);
+        updateCategorySelect();
+        renderCategoriesList();
+        renderProductsList();
+        
+        alert(`✅ Категория "${category}" удалена`);
+    }
+    
+    // ============ ОТОБРАЖЕНИЕ ТОВАРОВ ============
+    function renderProductsList() {
+        const searchTerm = document.getElementById('searchProduct')?.value.toLowerCase() || '';
+        let filtered = products;
+        if (searchTerm) {
+            filtered = products.filter(p => p.name.toLowerCase().includes(searchTerm));
+        }
+        
+        const container = document.getElementById('productsList');
+        
+        if (filtered.length === 0) {
+            container.innerHTML = '<div style="text-align:center;padding:40px;color:#888;">📦 Нет товаров. Нажмите "Добавить товар"</div>';
+            return;
+        }
+        
+        let html = `<div style="overflow-x: auto;">
+            <table class="products-table">
+                <thead>
+                    <tr><th>Фото</th><th>Название</th><th>Категория</th><th>Цена (мин)</th><th></th></tr>
+                </thead>
+                <tbody>`;
+        
+        filtered.forEach(product => {
+            const minPrice = product.priceRanges ? Math.min(...Object.values(product.priceRanges).filter(v => v > 0)) : 0;
+            html += `
+                <tr>
+                    <td><img src="${product.photo || 'https://placehold.co/50x50/eee/ccc?text=No'}" class="product-photo" onerror="this.src='https://placehold.co/50x50/eee/ccc?text=No'"></td>
+                    <td><strong>${escapeHtml(product.name)}</strong><br><small style="color:#888">${(product.description || '').substring(0, 50)}</small></td>
+                    <td>${product.category || '-'}</td>
+                    <td>${minPrice}₽</td>
+                    <td>
+                        <button class="btn btn-warning btn-sm" onclick="editProduct(${product.id})">✏️</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteProduct(${product.id})">🗑️</button>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        html += `</tbody>赶</div>`;
+        container.innerHTML = html;
+    }
+    
+    function filterProducts() {
+        renderProductsList();
+    }
+    
+    // ============ УПРАВЛЕНИЕ ВАРИАНТАМИ ============
+    function addVariant() {
+        const input = document.getElementById('newVariant');
+        const value = input.value.trim();
+        if (value && !currentVariants.includes(value)) {
+            currentVariants.push(value);
+            renderVariantsList();
+            input.value = '';
+        }
+    }
+    
+    function removeVariant(index) {
+        currentVariants.splice(index, 1);
+        renderVariantsList();
+    }
+    
+    function renderVariantsList() {
+        const container = document.getElementById('variantsList');
+        if (!container) return;
+        
+        if (currentVariants.length === 0) {
+            container.innerHTML = '<small style="color:#888">Нет вариантов. Добавьте вкусы/цвета/сопротивления</small>';
+            return;
+        }
+        
+        container.innerHTML = currentVariants.map((v, i) => `
+            <span class="flavor-tag">
+                ${escapeHtml(v)}
+                <button onclick="removeVariant(${i})">×</button>
+            </span>
+        `).join('');
+    }
+    
+    // ============ СОХРАНЕНИЕ ТОВАРА ============
+    document.getElementById('productForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
+        
+        const priceRanges = {
+            "3000-10000": parseInt(document.getElementById('price1')?.value) || 0,
+            "10000-30000": parseInt(document.getElementById('price2')?.value) || 0,
+            "30000-50000": parseInt(document.getElementById('price3')?.value) || 0,
+            "50000-100000": parseInt(document.getElementById('price4')?.value) || 0,
+            "100000-999999": parseInt(document.getElementById('price5')?.value) || 0
+        };
+        
+        const category = document.getElementById('productCategory').value;
+        let flavors = null, colors = null, resistances = null;
+        
+        if (category === 'Электронки') {
+            flavors = currentVariants.length > 0 ? currentVariants : null;
+        } else if (category === 'Под-системы') {
+            colors = currentVariants.length > 0 ? currentVariants : null;
+        } else if (category === 'Испарители' || category === 'Картриджи') {
+            resistances = currentVariants.length > 0 ? currentVariants : null;
+        } else {
+            flavors = currentVariants.length > 0 ? currentVariants : null;
+        }
+        
+        const newProduct = {
+            id: newId,
+            name: document.getElementById('productName').value,
+            description: document.getElementById('productDesc').value,
+            category: category,
+            priceRanges: priceRanges,
+            flavors: flavors,
+            colors: colors,
+            resistances: resistances,
+            sale: document.getElementById('productSale').value === 'true',
+            salePrice: null,
+            photo: document.getElementById('productPhoto').value || '',
+            popular: false
+        };
+        
+        products.push(newProduct);
+        
+        // Очищаем форму
+        document.getElementById('productName').value = '';
+        document.getElementById('productDesc').value = '';
+        document.getElementById('productPhoto').value = '';
+        document.getElementById('price1').value = '';
+        document.getElementById('price2').value = '';
+        document.getElementById('price3').value = '';
+        document.getElementById('price4').value = '';
+        document.getElementById('price5').value = '';
+        currentVariants = [];
+        renderVariantsList();
+        
+        renderProductsList();
+        
+        alert(`✅ Товар "${newProduct.name}" добавлен! Не забудьте сохранить изменения на GitHub.`);
+    });
+    
+    // ============ РЕДАКТИРОВАНИЕ ============
+    function editProduct(id) {
+        const product = products.find(p => p.id === id);
+        if (!product) return;
+        
+        document.getElementById('productName').value = product.name;
+        document.getElementById('productDesc').value = product.description || '';
+        document.getElementById('productCategory').value = product.category || 'Электронки';
+        document.getElementById('productPhoto').value = product.photo || '';
+        document.getElementById('productSale').value = product.sale ? 'true' : 'false';
+        
+        if (product.priceRanges) {
+            document.getElementById('price1').value = product.priceRanges['3000-10000'] || 0;
+            document.getElementById('price2').value = product.priceRanges['10000-30000'] || 0;
+            document.getElementById('price3').value = product.priceRanges['30000-50000'] || 0;
+            document.getElementById('price4').value = product.priceRanges['50000-100000'] || 0;
+            document.getElementById('price5').value = product.priceRanges['100000-999999'] || 0;
+        }
+        
+        if (product.flavors) currentVariants = [...product.flavors];
+        else if (product.colors) currentVariants = [...product.colors];
+        else if (product.resistances) currentVariants = [...product.resistances];
+        else currentVariants = [];
+        renderVariantsList();
+        
+        const index = products.findIndex(p => p.id === id);
+        if (index !== -1) products.splice(index, 1);
+        
+        alert(`✏️ Редактирование "${product.name}". После изменений нажмите "Добавить товар" для сохранения.`);
+    }
+    
+    // ============ УДАЛЕНИЕ ============
+    function deleteProduct(id) {
+        const product = products.find(p => p.id === id);
+        if (confirm(`Удалить товар "${product?.name}"?`)) {
+            const index = products.findIndex(p => p.id === id);
+            if (index !== -1) {
+                products.splice(index, 1);
+                renderProductsList();
+                alert('✅ Товар удален!');
+            }
+        }
+    }
+    
+    // ============ СОХРАНЕНИЕ НА GITHUB ============
+    async function saveToGitHub() {
+        const token = document.getElementById('githubToken').value;
+        if (!token || !token.startsWith('ghp_')) {
+            alert('❌ Введите корректный GitHub токен (начинается с ghp_)');
+            return;
+        }
+        
+        if (!githubConfig.repo) {
+            alert('❌ Не удалось определить репозиторий');
+            return;
+        }
+        
+        localStorage.setItem('amigoopt_github_token', token);
+        githubConfig.token = token;
+        
+        const updatedData = {
+            shopName: 'AmigoOPT',
+            contactPhone: document.getElementById('shopPhone').value,
+            managerTgId: document.getElementById('managerId').value,
+            botToken: shopConfig.botToken || '',
+            categories: categories,
+            products: products
+        };
+        
+        const url = `https://api.github.com/repos/${githubConfig.repo}/contents/data.json`;
+        
+        try {
+            const getResponse = await fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github+json'
+                }
+            });
+            
+            let sha = null;
+            if (getResponse.ok) {
+                const fileData = await getResponse.json();
+                sha = fileData.sha;
+            }
+            
+            const content = btoa(unescape(encodeURIComponent(JSON.stringify(updatedData, null, 2))));
+            
+            const updateResponse = await fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: `Обновление данных от ${new Date().toLocaleString('ru-RU')}`,
+                    content: content,
+                    sha: sha
+                })
+            });
+            
+            if (updateResponse.ok) {
+                alert('✅ Данные успешно сохранены на GitHub!');
+            } else {
+                const error = await updateResponse.json();
+                alert(`❌ Ошибка: ${error.message}`);
+            }
+        } catch(e) {
+            console.error(e);
+            alert('⚠️ Ошибка соединения');
+        }
+    }
+    
+    function exportAllData() {
+        const data = {
+            shopName: 'AmigoOPT',
+            contactPhone: document.getElementById('shopPhone').value,
+            managerTgId: document.getElementById('managerId').value,
+            botToken: shopConfig.botToken || '',
+            categories: categories,
+            products: products
+        };
+        
+        const jsonStr = JSON.stringify(data, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'data.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        alert('✅ Файл data.json скачан!');
+    }
+    
+    function saveGithubToken() {
+        const token = document.getElementById('githubToken').value;
+        if (token && token.startsWith('ghp_')) {
+            localStorage.setItem('amigoopt_github_token', token);
+            githubConfig.token = token;
+            alert('✅ Токен сохранен!');
+        } else {
+            alert('❌ Неверный формат токена');
+        }
+    }
+    
+    function saveSettings() {
+        alert('✅ Настройки сохранены локально! Нажмите "Сохранить на GitHub" для применения.');
+    }
+    
+    function setupTabs() {
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.tab;
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+                if (tab === 'products') document.getElementById('tabProducts').classList.add('active');
+                if (tab === 'add') document.getElementById('tabAdd').classList.add('active');
+                if (tab === 'categories') document.getElementById('tabCategories').classList.add('active');
+                if (tab === 'settings') document.getElementById('tabSettings').classList.add('active');
+            });
+        });
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+</script>
+</body>
+</html>
