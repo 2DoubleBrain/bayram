@@ -8,7 +8,8 @@
     "Жидкости",
     "Под-системы",
     "Испарители",
-    "Картриджи"
+    "Картриджи",
+    "Тестовый тест"
   ],
   "products": [
     {
@@ -7633,6 +7634,26 @@
       "sale": false,
       "salePrice": null,
       "photo": "https://i.postimg.cc/G2c90kKf/5199893687134001257.jpg",
+      "popular": false
+    },
+    {
+      "id": 236,
+      "name": "Прикол тест",
+      "description": "Описание",
+      "category": "Тестовый тест",
+      "priceRanges": {
+        "3000-10000": 1000,
+        "10000-30000": 0,
+        "30000-50000": 0,
+        "50000-100000": 0,
+        "100000-999999": 0
+      },
+      "flavors": null,
+      "colors": null,
+      "resistances": null,
+      "sale": false,
+      "salePrice": null,
+      "photo": "",
       "popular": false
     }
   ]
