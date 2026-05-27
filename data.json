@@ -8,67 +8,10 @@
     "Жидкости",
     "Под-системы",
     "Испарители",
-    "Картриджи"
+    "Картриджи",
+    "Тест"
   ],
   "products": [
-    {
-      "id": 1,
-      "name": "ICON 40000",
-      "description": "",
-      "category": "Электронки",
-      "priceRanges": {
-        "3000-10000": 510,
-        "10000-30000": 500,
-        "30000-50000": 490,
-        "50000-100000": 300,
-        "100000-999999": 301
-      },
-      "flavors": [
-        "Hawaii blueberry ice",
-        "Ice mint",
-        "Californiya cherry",
-        "Grape ace",
-        "Strawberry watermelon",
-        "Watermelon ice",
-        "Mexican mango",
-        "Микс вкусов"
-      ],
-      "colors": null,
-      "resistances": null,
-      "sale": false,
-      "salePrice": null,
-      "photo": "https://i.postimg.cc/Z5NgqkWT/5438367124859590047-(1).jpg",
-      "popular": false
-    },
-    {
-      "id": 2,
-      "name": "ICON 30000",
-      "description": "",
-      "category": "Электронки",
-      "priceRanges": {
-        "3000-10000": 460,
-        "10000-30000": 450,
-        "30000-50000": 440,
-        "50000-100000": 435,
-        "100000-999999": 430
-      },
-      "flavors": [
-        "Californiya cherry",
-        "Apple peach",
-        "Grape ice",
-        "Peach ice",
-        "Ice mint",
-        "Mexican mango",
-        "Watermelon ice",
-        "Микс вкусов"
-      ],
-      "colors": null,
-      "resistances": null,
-      "sale": false,
-      "salePrice": null,
-      "photo": "https://i.postimg.cc/jdpgm8Z8/5438367124859590054.jpg",
-      "popular": false
-    },
     {
       "id": 3,
       "name": "BUBBLE MON 20000",
@@ -7645,6 +7588,55 @@
         "10000-30000": 0,
         "30000-50000": 0,
         "50000-100000": 0,
+        "100000-999999": 0
+      },
+      "flavors": null,
+      "colors": null,
+      "resistances": null,
+      "sale": false,
+      "salePrice": null,
+      "photo": "",
+      "popular": false
+    },
+    {
+      "id": 237,
+      "name": "ICON 30000",
+      "description": "",
+      "category": "Электронки",
+      "priceRanges": {
+        "3000-10000": 460,
+        "10000-30000": 450,
+        "30000-50000": 440,
+        "50000-100000": 435,
+        "100000-999999": 430
+      },
+      "flavors": [
+        "Californiya cherry",
+        "Apple peach",
+        "Grape ice",
+        "Peach ice",
+        "Ice mint",
+        "Mexican mango",
+        "Watermelon ice",
+        "Микс вкусов"
+      ],
+      "colors": null,
+      "resistances": null,
+      "sale": false,
+      "salePrice": null,
+      "photo": "https://i.postimg.cc/jdpgm8Z8/5438367124859590054.jpg",
+      "popular": false
+    },
+    {
+      "id": 238,
+      "name": "тестовый тест",
+      "description": "",
+      "category": "Тест",
+      "priceRanges": {
+        "3000-10000": 0,
+        "10000-30000": 0,
+        "30000-50000": 0,
+        "50000-100000": 2000,
         "100000-999999": 0
       },
       "flavors": null,
