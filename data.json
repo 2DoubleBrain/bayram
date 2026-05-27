@@ -13,28 +13,6 @@
   ],
   "products": [
     {
-      "id": 5,
-      "name": "HUSKY 16000",
-      "description": "",
-      "category": "Электронки",
-      "priceRanges": {
-        "3000-10000": 455,
-        "10000-30000": 450,
-        "30000-50000": 440,
-        "50000-100000": 435,
-        "100000-999999": 430
-      },
-      "flavors": [
-        "Уточнить у менеджера"
-      ],
-      "colors": null,
-      "resistances": null,
-      "sale": false,
-      "salePrice": null,
-      "photo": "https://i.postimg.cc/MpSG5dWC/5440618924673274815.jpg",
-      "popular": false
-    },
-    {
       "id": 6,
       "name": "MFU 25000",
       "description": "",
@@ -7645,6 +7623,28 @@
       "sale": false,
       "salePrice": null,
       "photo": "https://i.postimg.cc/yx2HDYdz/5440618924673274813.jpg",
+      "popular": false
+    },
+    {
+      "id": 242,
+      "name": "HUSKY 16000",
+      "description": "",
+      "category": "Тест",
+      "priceRanges": {
+        "3000-10000": 455,
+        "10000-30000": 450,
+        "30000-50000": 440,
+        "50000-100000": 435,
+        "100000-999999": 430
+      },
+      "flavors": [
+        "Уточнить у менеджера"
+      ],
+      "colors": null,
+      "resistances": null,
+      "sale": false,
+      "salePrice": null,
+      "photo": "https://i.postimg.cc/MpSG5dWC/5440618924673274815.jpg",
       "popular": false
     }
   ]
