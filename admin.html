@@ -428,7 +428,7 @@
             <!-- Вкладка: Настройки -->
             <div id="tabSettings" class="tab-pane">
                 <div class="form-group">
-                    <label>GitHub токен</label>
+                    <label>Токен для сохранения</label>
                     <input type="password" id="githubToken" placeholder="ghp_...">
                     <button class="btn btn-primary btn-sm" onclick="saveGithubToken()">💾 Сохранить токен</button>
                 </div>
@@ -450,7 +450,7 @@
                 <hr>
                 
                 <button class="btn btn-warning" onclick="exportAllData()">📤 Экспортировать данные (data.json)</button>
-                <button class="btn btn-success" onclick="saveToGitHub()" style="margin-left: 10px;">💾 Сохранить на GitHub</button>
+                <button class="btn btn-success" onclick="saveToGitHub()" style="margin-left: 10px;">💾 Сохранить изменения</button>
             </div>
         </div>
     </div>
@@ -760,7 +760,7 @@
         
         renderProductsList();
         
-        alert(`✅ Товар "${newProduct.name}" добавлен! Не забудьте сохранить изменения на GitHub.`);
+        alert(`✅ Товар "${newProduct.name}" добавлен! Не забудьте сохранить изменения через вкладку настройки.`);
     });
     
     // ============ РЕДАКТИРОВАНИЕ ============
@@ -811,12 +811,12 @@
     async function saveToGitHub() {
         const token = document.getElementById('githubToken').value;
         if (!token || !token.startsWith('ghp_')) {
-            alert('❌ Введите корректный GitHub токен (начинается с ghp_)');
+            alert('❌ Введите корректный токен (начинается с ghp_)');
             return;
         }
         
         if (!githubConfig.repo) {
-            alert('❌ Не удалось определить репозиторий');
+            alert('❌ Не удалось сохранить на сервере');
             return;
         }
         
@@ -865,7 +865,7 @@
             });
             
             if (updateResponse.ok) {
-                alert('✅ Данные успешно сохранены на GitHub!');
+                alert('✅ Данные успешно сохранены! Через 2 минуты, приложение обновится');
             } else {
                 const error = await updateResponse.json();
                 alert(`❌ Ошибка: ${error.message}`);
@@ -910,7 +910,7 @@
     }
     
     function saveSettings() {
-        alert('✅ Настройки сохранены локально! Нажмите "Сохранить на GitHub" для применения.');
+        alert('✅ Настройки сохранены локально! Нажмите "Сохранить изменения" для применения.');
     }
     
     function setupTabs() {
