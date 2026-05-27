@@ -166,6 +166,21 @@
         .status.error { background: #ffebee; color: #c62828; display: block; }
         
         hr { margin: 20px 0; border: none; border-top: 1px solid #eee; }
+        
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1a2e;
+            color: #FFD700;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 14px;
+            z-index: 1000;
+            display: none;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -241,7 +256,7 @@
                             <button type="button" onclick="addVariant()">➕ Добавить</button>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-success">➕ Добавить товар</button>
+                    <button type="submit" class="btn btn-success" id="saveProductBtn">💾 Сохранить товар</button>
                 </form>
             </div>
             
@@ -301,6 +316,8 @@
     </div>
 </div>
 
+<div id="notification" class="notification"></div>
+
 <script>
     let products = [];
     let categories = ["Электронки", "Жидкости", "Под-системы", "Испарители", "Картриджи", "Снюс"];
@@ -311,6 +328,15 @@
     
     let githubConfig = { repo: "", token: null };
     
+    function showNotification(msg, isError = false) {
+        const notif = document.getElementById('notification');
+        notif.textContent = msg;
+        notif.style.backgroundColor = isError ? '#c62828' : '#1a1a2e';
+        notif.style.color = '#FFD700';
+        notif.style.display = 'block';
+        setTimeout(() => { notif.style.display = 'none'; }, 3000);
+    }
+    
     function getRepoInfo() {
         const hostname = window.location.hostname;
         if (hostname.includes('github.io')) {
@@ -320,6 +346,19 @@
             return { username, reponame };
         }
         return null;
+    }
+    
+    function switchToAddTab() {
+        // Переключаем вкладки
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+        
+        const addTabBtn = document.querySelector('.tab-btn[data-tab="add"]');
+        if (addTabBtn) addTabBtn.classList.add('active');
+        document.getElementById('tabAdd').classList.add('active');
+        
+        // Скроллим к форме
+        document.getElementById('productForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     
     function checkLogin() {
@@ -440,7 +479,7 @@
             const index = products.findIndex(p => p.id === editingProductId);
             if (index !== -1) {
                 products[index].priceRanges = { ...tempPriceRanges };
-                alert('✅ Цены обновлены! Не забудьте сохранить на сервер.');
+                showNotification('✅ Цены обновлены! Не забудьте сохранить на сервер.');
                 renderProductsList();
             }
         }
@@ -468,7 +507,7 @@
         updateCategorySelect();
         renderCategoriesList();
         input.value = '';
-        alert(`✅ Категория "${newCat}" добавлена`);
+        showNotification(`✅ Категория "${newCat}" добавлена`);
     }
     
     function deleteCategory(category, index) {
@@ -488,7 +527,7 @@
         updateCategorySelect();
         renderCategoriesList();
         renderProductsList();
-        alert(`✅ Категория "${category}" удалена`);
+        showNotification(`✅ Категория "${category}" удалена`);
     }
     
     function addVariant() {
@@ -516,8 +555,23 @@
         container.innerHTML = currentVariants.map((v, i) => `<span class="variant-tag">${escapeHtml(v)}<button onclick="removeVariant(${i})">×</button></span>`).join('');
     }
     
+    function clearProductForm() {
+        document.getElementById('productName').value = '';
+        document.getElementById('productDesc').value = '';
+        document.getElementById('productPhoto').value = '';
+        document.getElementById('price1').value = '';
+        document.getElementById('price2').value = '';
+        document.getElementById('price3').value = '';
+        document.getElementById('price4').value = '';
+        document.getElementById('price5').value = '';
+        currentVariants = [];
+        renderVariantsList();
+        editingProductId = null;
+    }
+    
     document.getElementById('productForm')?.addEventListener('submit', (e) => {
         e.preventDefault();
+        
         const newId = products.length ? Math.max(...products.map(p => p.id)) + 1 : 1;
         const category = document.getElementById('productCategory').value;
         let flavors = null, colors = null, resistances = null;
@@ -544,29 +598,28 @@
             photo: document.getElementById('productPhoto').value || '',
             popular: false
         };
+        
         products.push(newProduct);
-        document.getElementById('productName').value = '';
-        document.getElementById('productDesc').value = '';
-        document.getElementById('productPhoto').value = '';
-        document.getElementById('price1').value = '';
-        document.getElementById('price2').value = '';
-        document.getElementById('price3').value = '';
-        document.getElementById('price4').value = '';
-        document.getElementById('price5').value = '';
-        currentVariants = [];
-        renderVariantsList();
+        clearProductForm();
         renderProductsList();
-        alert(`✅ Товар "${newProduct.name}" добавлен!`);
+        showNotification(`✅ Товар "${newProduct.name}" сохранен!`);
     });
     
     function editProduct(id) {
         const product = products.find(p => p.id === id);
         if (!product) return;
+        
+        // Удаляем старую версию товара
+        const index = products.findIndex(p => p.id === id);
+        if (index !== -1) products.splice(index, 1);
+        
+        // Заполняем форму
         document.getElementById('productName').value = product.name;
         document.getElementById('productDesc').value = product.description || '';
         document.getElementById('productCategory').value = product.category || 'Электронки';
         document.getElementById('productPhoto').value = product.photo || '';
         document.getElementById('productSale').value = product.sale ? 'true' : 'false';
+        
         if (product.priceRanges) {
             document.getElementById('price1').value = product.priceRanges['3000-10000'] || 0;
             document.getElementById('price2').value = product.priceRanges['10000-30000'] || 0;
@@ -574,30 +627,39 @@
             document.getElementById('price4').value = product.priceRanges['50000-100000'] || 0;
             document.getElementById('price5').value = product.priceRanges['100000-999999'] || 0;
         }
+        
         if (product.flavors) currentVariants = [...product.flavors];
         else if (product.colors) currentVariants = [...product.colors];
         else if (product.resistances) currentVariants = [...product.resistances];
         else currentVariants = [];
         renderVariantsList();
-        const idx = products.findIndex(p => p.id === id);
-        if (idx !== -1) products.splice(idx, 1);
-        alert(`✏️ Редактируйте "${product.name}", затем нажмите "Добавить товар"`);
+        
+        // Переключаемся на вкладку "Добавить товар"
+        switchToAddTab();
+        
+        showNotification(`✏️ Редактирование: "${product.name}". После изменений нажмите "Сохранить товар"`);
     }
     
     function deleteProduct(id) {
         const product = products.find(p => p.id === id);
-        if (confirm(`Удалить "${product?.name}"?`)) {
+        if (confirm(`Удалить товар "${product?.name}"?`)) {
             const idx = products.findIndex(p => p.id === id);
             if (idx !== -1) products.splice(idx, 1);
             renderProductsList();
-            alert('✅ Товар удален');
+            showNotification('✅ Товар удален');
         }
     }
     
     async function saveToGitHub() {
         const token = document.getElementById('githubToken').value;
-        if (!token || !token.startsWith('ghp_')) return alert('❌ Введите корректный токен (ghp_...)');
-        if (!githubConfig.repo) return alert('❌ Не удалось определить репозиторий');
+        if (!token || !token.startsWith('ghp_')) {
+            showNotification('❌ Введите корректный токен (ghp_...)', true);
+            return;
+        }
+        if (!githubConfig.repo) {
+            showNotification('❌ Не удалось определить репозиторий', true);
+            return;
+        }
         localStorage.setItem('amigoopt_github_token', token);
         
         const data = {
@@ -620,9 +682,9 @@
                 headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: `Обновление от ${new Date().toLocaleString('ru-RU')}`, content: content, sha: sha })
             });
-            if (putRes.ok) alert('✅ Сохранено! Через 2 минуты изменения появятся');
-            else alert('❌ Ошибка сохранения');
-        } catch(e) { alert('⚠️ Ошибка соединения'); }
+            if (putRes.ok) showNotification('✅ Сохранено! Через 2 минуты изменения появятся');
+            else showNotification('❌ Ошибка сохранения', true);
+        } catch(e) { showNotification('⚠️ Ошибка соединения', true); }
     }
     
     function exportAllData() {
@@ -640,19 +702,19 @@
         a.download = 'data.json';
         a.click();
         URL.revokeObjectURL(blob);
-        alert('✅ data.json скачан');
+        showNotification('✅ data.json скачан');
     }
     
     function saveGithubToken() {
         const token = document.getElementById('githubToken').value;
         if (token && token.startsWith('ghp_')) {
             localStorage.setItem('amigoopt_github_token', token);
-            alert('✅ Токен сохранен');
-        } else alert('❌ Неверный токен');
+            showNotification('✅ Токен сохранен');
+        } else showNotification('❌ Неверный токен', true);
     }
     
     function saveSettings() {
-        alert('✅ Настройки сохранены локально. Нажмите "Сохранить на сервер" для применения');
+        showNotification('✅ Настройки сохранены локально. Нажмите "Сохранить на сервер" для применения');
     }
     
     function setupTabs() {
