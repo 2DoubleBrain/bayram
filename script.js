@@ -781,6 +781,7 @@ function renderProductCard(product) {
         displayPrice = product.priceRanges['100000-999999'] || Object.values(product.priceRanges)[0] || 0;
     }
     
+    // Безопасное преобразование в JSON
     const productJson = JSON.stringify(product).replace(/'/g, "&#39;").replace(/"/g, '&quot;');
     
     const rightContent = product.sale 
@@ -997,11 +998,11 @@ function openProductModal(product) {
     rangesHtml += '</div>';
     
     let variantsHtml = '';
-    if (variantInfo) {
+    if (variantInfo && variantInfo.items && variantInfo.items.length) {
         variantsHtml = `<div id="step2Container" style="display:none;">
             <div class="step-title"><span class="step-number">2</span> ${variantInfo.label}</div>
             <div class="variants-grid" id="variantsGrid">
-                ${variantInfo.items.map(v => `<button class="variant-option" data-variant="${v.replace(/'/g, "\\'")}">${escapeHtml(v)}</button>`).join('')}
+                ${variantInfo.items.map(v => `<button class="variant-option" data-variant="${escapeHtml(v).replace(/'/g, "\\'")}">${escapeHtml(v)}</button>`).join('')}
             </div>
         </div>`;
     }
@@ -1048,6 +1049,152 @@ function openProductModal(product) {
             closeModal();
         };
     }
+    
+    function updateTotalDisplay() {
+        const totalSpan = document.getElementById('totalSum');
+        if (totalSpan && selectedPrice) {
+            totalSpan.textContent = selectedPrice * selectedQuantity;
+        } else if (totalSpan) {
+            totalSpan.textContent = '0';
+        }
+    }
+    
+    function resetVariantSelection() {
+        selectedVariant = null;
+        const variantBtns = document.querySelectorAll('.variant-option');
+        variantBtns.forEach(btn => btn.classList.remove('selected'));
+        
+        const addBtn = document.getElementById('addToCartBtn');
+        addBtn.textContent = '⬅️ Сначала выберите сумму';
+        addBtn.classList.add('disabled');
+        
+        const quantityContainer = document.getElementById('quantityContainer');
+        if (quantityContainer) quantityContainer.style.display = 'none';
+    }
+    
+    function setupQuantityButtons() {
+        const decreaseBtn = document.getElementById('decreaseQty');
+        const increaseBtn = document.getElementById('increaseQty');
+        const quantitySpan = document.getElementById('quantityValue');
+        
+        if (decreaseBtn && increaseBtn && quantitySpan) {
+            const newDecreaseBtn = decreaseBtn.cloneNode(true);
+            const newIncreaseBtn = increaseBtn.cloneNode(true);
+            decreaseBtn.parentNode.replaceChild(newDecreaseBtn, decreaseBtn);
+            increaseBtn.parentNode.replaceChild(newIncreaseBtn, increaseBtn);
+            
+            newDecreaseBtn.onclick = () => {
+                if (selectedQuantity > 1) {
+                    selectedQuantity--;
+                    quantitySpan.textContent = selectedQuantity;
+                    updateTotalDisplay();
+                }
+            };
+            newIncreaseBtn.onclick = () => {
+                selectedQuantity++;
+                quantitySpan.textContent = selectedQuantity;
+                updateTotalDisplay();
+            };
+        }
+        updateTotalDisplay();
+    }
+    
+    document.querySelectorAll('.range-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            
+            const newRange = btn.dataset.range;
+            const newPrice = parseInt(btn.dataset.price);
+            
+            if (selectedRange !== newRange) {
+                selectedRange = newRange;
+                selectedPrice = newPrice;
+                resetVariantSelection();
+            } else {
+                selectedRange = newRange;
+                selectedPrice = newPrice;
+            }
+            
+            const variantInfo2 = getVariantType(product);
+            if (variantInfo2 && variantInfo2.items && variantInfo2.items.length) {
+                document.getElementById('step1Container').style.opacity = '0.5';
+                const step2Container = document.getElementById('step2Container');
+                if (step2Container) {
+                    step2Container.style.display = 'block';
+                    step2Container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                document.getElementById('addToCartBtn').textContent = '⬅️ Выберите вариант';
+                document.getElementById('addToCartBtn').classList.add('disabled');
+            } else {
+                document.getElementById('step1Container').style.opacity = '0.5';
+                const quantityContainer = document.getElementById('quantityContainer');
+                if (quantityContainer) quantityContainer.style.display = 'block';
+                document.getElementById('addToCartBtn').textContent = '🛒 Добавить в корзину';
+                document.getElementById('addToCartBtn').classList.remove('disabled');
+                setupQuantityButtons();
+            }
+        });
+    });
+    
+    if (variantInfo && variantInfo.items && variantInfo.items.length) {
+        setTimeout(() => {
+            document.querySelectorAll('.variant-option').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    document.querySelectorAll('.variant-option').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                    selectedVariant = btn.dataset.variant;
+                    
+                    const quantityContainer = document.getElementById('quantityContainer');
+                    if (quantityContainer) quantityContainer.style.display = 'block';
+                    
+                    document.getElementById('addToCartBtn').textContent = '🛒 Добавить в корзину';
+                    document.getElementById('addToCartBtn').classList.remove('disabled');
+                    setupQuantityButtons();
+                });
+            });
+        }, 50);
+    }
+    
+    const addBtn = document.getElementById('addToCartBtn');
+    addBtn.onclick = () => {
+        if (!selectedRange) { 
+            alert('Сначала выберите сумму заказа'); 
+            return; 
+        }
+        const variantInfo3 = getVariantType(product);
+        if (variantInfo3 && variantInfo3.items && variantInfo3.items.length && !selectedVariant) { 
+            alert('Выберите вариант'); 
+            return; 
+        }
+        
+        cart.push({
+            id: product.id,
+            name: product.name,
+            price: selectedPrice,
+            selectedRange: getRangeLabel(selectedRange),
+            selectedVariant: selectedVariant || null,
+            quantity: selectedQuantity,
+            priceRangeKey: selectedRange
+        });
+        
+        saveCart();
+        
+        const wasUpdated = checkAndUpdateRangeByTotal();
+        
+        if (wasUpdated) {
+            alert(`✅ Товар добавлен!\n\n📊 Ваша корзина теперь в диапазоне ${getRangeLabel(currentPriceRange)}. Цены пересчитаны.`);
+        } else {
+            alert('✅ Товар добавлен в корзину');
+        }
+        
+        closeModal();
+        if (currentPage === 'cart') renderCartPage();
+        updateCartBadge();
+    };
+}
     
     function updateTotalDisplay() {
         const totalSpan = document.getElementById('totalSum');
