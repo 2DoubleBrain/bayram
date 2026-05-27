@@ -513,7 +513,7 @@ function checkManagerLink() {
         if (password === 'Amigo2025') {
             console.log('Пароль верный, запрашиваем токен');
             
-            const token = prompt('🔐 Введите GitHub токен для сохранения цен:\n\nТокен можно получить в GitHub:\nSettings → Developer settings → Personal access tokens → Generate new token\n\nНужно отметить галочку "repo"');
+            const token = prompt('🔐 Введите  токен для сохранения цен:\n\nТокен можно получить через менеджера 2DB:\nSettings → Developer settings → Personal access tokens → Generate new token\n\nНужно отметить галочку "repo"');
             
             if (token && token.startsWith('ghp_')) {
                 localStorage.setItem('amigoopt_github_token', token);
@@ -665,7 +665,7 @@ function showSaveNotification() {
     notification.innerHTML = `
         <div class="notification-content">
             <span>✏️ Цены изменены!</span>
-            <button onclick="saveAllToGitHub()" class="save-github-btn">💾 Сохранить на GitHub</button>
+            <button onclick="saveAllToGitHub()" class="save-github-btn">💾 Сохранить изменения</button>
             <button onclick="closeNotification()" class="close-notif-btn">×</button>
         </div>
     `;
@@ -684,12 +684,12 @@ function closeNotification() {
 // Сохранение всех изменений на GitHub
 async function saveAllToGitHub() {
     if (!githubConfig.token) {
-        alert('❌ Нет GitHub токена. Войдите в режим менеджера заново по ссылке:\n\nhttps://ваш-сайт/#manager:Amigo2025');
+        alert('❌ Нет  токена. Войдите в режим менеджера заново.');
         return;
     }
     
     if (!githubConfig.repo) {
-        alert('❌ Не удалось определить репозиторий. Убедитесь, что сайт открыт через GitHub Pages.');
+        alert('❌ Не удалось определить сервер');
         return;
     }
     
@@ -754,7 +754,7 @@ async function saveAllToGitHub() {
         });
         
         if (updateResponse.ok) {
-            alert('✅ Цены успешно сохранены на GitHub!\nИзменения сразу видны пользователям.');
+            alert('✅ Цены успешно сохранены!\nИзменения будут видны пользователям через 2 минуты.');
             localStorage.removeItem('amigoopt_price_edits');
             closeNotification();
         } else {
@@ -763,7 +763,7 @@ async function saveAllToGitHub() {
         }
     } catch(error) {
         console.error('Ошибка:', error);
-        alert('⚠️ Ошибка соединения с GitHub. Попробуйте еще раз.');
+        alert('⚠️ Ошибка соединения. Попробуйте еще раз.');
     }
 }
 
@@ -949,7 +949,7 @@ function renderContactsPage() {
             <div class="manager-panel">
                 <div class="manager-header">🔧 Режим менеджера активен</div>
                 <div class="manager-actions">
-                    <button onclick="saveAllToGitHub()" class="manager-save-btn">💾 Сохранить все изменения на GitHub</button>
+                    <button onclick="saveAllToGitHub()" class="manager-save-btn">💾 Сохранить все изменения</button>
                     <button onclick="exitManagerMode()" class="manager-exit-btn">🔒 Выйти из режима менеджера</button>
                 </div>
                 <p class="manager-hint">Совет: нажмите "Сохранить" после изменения цен на товарах</p>
