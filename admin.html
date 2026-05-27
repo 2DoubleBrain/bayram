@@ -2,23 +2,36 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <title>AmigoOPT - Админ панель</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f0f2f5;
-            padding: 20px;
+            padding: 12px;
+            padding-bottom: 30px;
         }
-        .container { max-width: 1200px; margin: 0 auto; }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
         .card {
             background: white;
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 24px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
+        
         .card h2 {
             margin-bottom: 15px;
             color: #1a1a2e;
@@ -26,65 +39,178 @@
             border-left: 4px solid #FFD700;
             padding-left: 12px;
         }
-        .form-group { margin-bottom: 15px; }
+        
+        .form-group {
+            margin-bottom: 14px;
+        }
+        
         .form-group label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 6px;
             font-weight: 600;
-            font-size: 13px;
+            font-size: 14px;
             color: #333;
         }
-        .form-group input, .form-group select, .form-group textarea {
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
             width: 100%;
-            padding: 10px 12px;
+            padding: 14px 12px;
             border: 1px solid #ddd;
-            border-radius: 12px;
-            font-size: 14px;
+            border-radius: 14px;
+            font-size: 16px;
+            background: white;
+            -webkit-appearance: none;
+            appearance: none;
         }
-        .form-row { display: flex; gap: 10px; }
-        .form-row .form-group { flex: 1; }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #FFD700;
+            box-shadow: 0 0 0 2px rgba(255,215,0,0.2);
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+            min-width: 120px;
+        }
+        
         .btn {
-            padding: 12px 20px;
+            padding: 14px 20px;
             border: none;
-            border-radius: 30px;
-            font-size: 14px;
-            font-weight: bold;
+            border-radius: 40px;
+            font-size: 16px;
+            font-weight: 600;
             cursor: pointer;
+            transition: opacity 0.2s, transform 0.05s;
+            text-align: center;
+            display: inline-block;
         }
-        .btn-primary { background: #1a1a2e; color: #FFD700; }
-        .btn-success { background: #4caf50; color: white; }
-        .btn-danger { background: #ff4444; color: white; }
-        .btn-warning { background: #ff9800; color: white; }
-        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        
+        .btn:active {
+            transform: scale(0.97);
+        }
+        
+        .btn-primary {
+            background: #1a1a2e;
+            color: #FFD700;
+        }
+        
+        .btn-success {
+            background: #4caf50;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #ff4444;
+            color: white;
+        }
+        
+        .btn-warning {
+            background: #ff9800;
+            color: white;
+        }
+        
+        .btn-sm {
+            padding: 8px 14px;
+            font-size: 14px;
+        }
+        
+        .btn-block {
+            width: 100%;
+            margin-bottom: 10px;
+        }
         
         .products-table {
             width: 100%;
             border-collapse: collapse;
+            font-size: 14px;
         }
-        .products-table th, .products-table td {
-            padding: 10px;
+        
+        .products-table th,
+        .products-table td {
+            padding: 12px 8px;
             text-align: left;
             border-bottom: 1px solid #eee;
         }
-        .products-table th { background: #f5f5f5; }
-        .product-photo { width: 50px; height: 50px; object-fit: cover; border-radius: 10px; }
         
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .products-table th {
+            background: #f5f5f5;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        
+        .product-photo {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 12px;
+            background: #f0f0f0;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
         .tab-btn {
-            padding: 10px 20px;
+            flex: 1;
+            min-width: 80px;
+            padding: 12px 8px;
             background: #e0e0e0;
             border: none;
-            border-radius: 30px;
+            border-radius: 40px;
             cursor: pointer;
             font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s;
         }
-        .tab-btn.active { background: #1a1a2e; color: #FFD700; }
-        .tab-pane { display: none; }
-        .tab-pane.active { display: block; }
         
-        .price-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-        .price-row label { width: 130px; font-size: 12px; }
-        .price-row input { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 8px; }
+        .tab-btn.active {
+            background: #1a1a2e;
+            color: #FFD700;
+        }
+        
+        .tab-pane {
+            display: none;
+        }
+        
+        .tab-pane.active {
+            display: block;
+        }
+        
+        .price-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .price-row label {
+            width: 110px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .price-row input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            font-size: 14px;
+        }
         
         .variants-list {
             display: flex;
@@ -93,28 +219,51 @@
             margin-top: 10px;
             margin-bottom: 10px;
         }
+        
         .variant-tag {
             background: #e0e0e0;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-size: 13px;
             display: inline-flex;
             align-items: center;
-            gap: 5px;
+            gap: 8px;
         }
+        
         .variant-tag button {
             background: none;
             border: none;
             cursor: pointer;
             color: #ff4444;
+            font-size: 16px;
+            font-weight: bold;
         }
+        
         .add-variant {
             display: flex;
-            gap: 5px;
+            gap: 8px;
             margin-top: 10px;
+            flex-wrap: wrap;
         }
-        .add-variant input { flex: 1; padding: 8px; border-radius: 20px; border: 1px solid #ddd; }
-        .add-variant button { padding: 8px 15px; background: #1a1a2e; color: #FFD700; border: none; border-radius: 20px; cursor: pointer; }
+        
+        .add-variant input {
+            flex: 1;
+            padding: 12px;
+            border-radius: 30px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+        }
+        
+        .add-variant button {
+            padding: 12px 20px;
+            background: #1a1a2e;
+            color: #FFD700;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
         
         .categories-list {
             display: flex;
@@ -122,23 +271,44 @@
             gap: 10px;
             margin-bottom: 15px;
         }
+        
         .category-tag {
             background: #e0e0e0;
-            padding: 6px 15px;
-            border-radius: 30px;
-            font-size: 13px;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 14px;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
+        
         .category-tag button {
             background: none;
             border: none;
             cursor: pointer;
             color: #ff4444;
+            font-size: 18px;
+            font-weight: bold;
         }
-        .add-category { display: flex; gap: 10px; margin-top: 10px; }
-        .add-category input { flex: 1; padding: 10px; border-radius: 30px; border: 1px solid #ddd; }
+        
+        .add-category {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .add-category input {
+            flex: 1;
+            padding: 14px;
+            border-radius: 40px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+        }
+        
+        .add-category button {
+            padding: 14px 20px;
+        }
         
         .price-edit-group {
             display: flex;
@@ -146,65 +316,153 @@
             justify-content: space-between;
             gap: 10px;
             margin-bottom: 12px;
-            padding: 8px;
-            background: #f9f9f9;
-            border-radius: 12px;
-        }
-        .price-edit-group label { font-size: 13px; flex: 1; }
-        .price-edit-input { width: 120px; padding: 8px; border: 1px solid #ddd; border-radius: 8px; text-align: right; }
-        
-        .search-box { margin-bottom: 15px; }
-        .search-box input { width: 100%; padding: 10px; border-radius: 30px; border: 1px solid #ddd; }
-        
-        .status {
             padding: 10px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            display: none;
+            background: #f9f9f9;
+            border-radius: 14px;
+            flex-wrap: wrap;
         }
-        .status.success { background: #e8f5e9; color: #2e7d32; display: block; }
-        .status.error { background: #ffebee; color: #c62828; display: block; }
         
-        hr { margin: 20px 0; border: none; border-top: 1px solid #eee; }
+        .price-edit-group label {
+            font-size: 13px;
+            flex: 1;
+            min-width: 100px;
+        }
         
-        .notification {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1a1a2e;
-            color: #FFD700;
-            padding: 12px 24px;
-            border-radius: 30px;
+        .price-edit-input {
+            width: 120px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            text-align: right;
             font-size: 14px;
-            z-index: 1000;
+        }
+        
+        .search-box {
+            margin-bottom: 15px;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 14px;
+            border-radius: 40px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+        }
+        
+        hr {
+            margin: 20px 0;
+            border: none;
+            border-top: 1px solid #eee;
+        }
+        
+        /* Модальное окно */
+        .modal-overlay {
             display: none;
-            white-space: nowrap;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 28px;
+            max-width: 450px;
+            width: 100%;
+            margin: auto;
+            padding: 20px;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .modal-header h3 {
+            font-size: 18px;
+            color: #1a1a2e;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #888;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .button-group .btn {
+            flex: 1;
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                padding: 8px;
+            }
+            .card {
+                padding: 14px;
+            }
+            .btn {
+                padding: 12px 16px;
+                font-size: 14px;
+            }
+            .products-table th,
+            .products-table td {
+                padding: 8px 4px;
+                font-size: 12px;
+            }
+            .product-photo {
+                width: 40px;
+                height: 40px;
+            }
+            .price-edit-input {
+                width: 100px;
+            }
         }
     </style>
 </head>
 <body>
 <div class="container">
+    <!-- Вход -->
     <div id="loginCard" class="card">
         <h2>🔐 Вход в админ-панель</h2>
         <div class="form-group">
             <label>Пароль</label>
             <input type="password" id="adminPassword" placeholder="Введите пароль">
         </div>
-        <button class="btn btn-primary" onclick="checkLogin()">Войти</button>
+        <button class="btn btn-primary btn-block" onclick="checkLogin()">Войти</button>
     </div>
     
+    <!-- Админ панель -->
     <div id="adminPanel" style="display: none;">
         <div class="card">
             <h2>📦 AmigoOPT - Управление магазином</h2>
             
             <div class="tabs">
                 <button class="tab-btn active" data-tab="products">📋 Товары</button>
-                <button class="tab-btn" data-tab="add">➕ Добавить товар</button>
+                <button class="tab-btn" data-tab="add">➕ Добавить</button>
                 <button class="tab-btn" data-tab="categories">🏷️ Категории</button>
                 <button class="tab-btn" data-tab="settings">⚙️ Настройки</button>
             </div>
             
+            <!-- Вкладка: Товары -->
             <div id="tabProducts" class="tab-pane active">
                 <div class="search-box">
                     <input type="text" id="searchProduct" placeholder="🔍 Поиск товаров..." onkeyup="filterProducts()">
@@ -212,6 +470,7 @@
                 <div id="productsList"></div>
             </div>
             
+            <!-- Вкладка: Добавить товар -->
             <div id="tabAdd" class="tab-pane">
                 <form id="productForm">
                     <div class="form-group">
@@ -224,7 +483,7 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Категория *</label>
+                            <label>Категория</label>
                             <select id="productCategory"></select>
                         </div>
                         <div class="form-group">
@@ -238,7 +497,7 @@
                     <div class="form-group">
                         <label>Фото (ссылка)</label>
                         <input type="text" id="productPhoto" placeholder="https://...">
-                        <small>Загрузите фото на postimages.org и вставьте ссылку</small>
+                        <small style="color:#888; font-size:11px;">Загрузите на postimages.org → вставьте прямую ссылку</small>
                     </div>
                     <div class="form-group">
                         <label>Цены</label>
@@ -249,19 +508,20 @@
                         <div class="price-row"><label>100 000+ ₽:</label><input type="number" id="price5" placeholder="Цена"></div>
                     </div>
                     <div class="form-group">
-                        <label>Варианты (вкусы/цвета)</label>
+                        <label>Варианты (вкусы/цвета/сопротивления)</label>
                         <div id="variantsList" class="variants-list"></div>
                         <div class="add-variant">
                             <input type="text" id="newVariant" placeholder="Например: Клубника">
                             <button type="button" onclick="addVariant()">➕ Добавить</button>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-success" id="saveProductBtn">💾 Сохранить товар</button>
+                    <button type="submit" class="btn btn-success btn-block" id="saveProductBtn">💾 Сохранить товар</button>
                 </form>
             </div>
             
+            <!-- Вкладка: Категории -->
             <div id="tabCategories" class="tab-pane">
-                <h3>📂 Управление категориями</h3>
+                <h3 style="margin-bottom: 15px;">📂 Управление категориями</h3>
                 <div class="categories-list" id="categoriesList"></div>
                 <div class="add-category">
                     <input type="text" id="newCategory" placeholder="Название новой категории">
@@ -270,44 +530,46 @@
                 <hr>
                 <div class="form-group">
                     <label>При удалении категории:</label>
-                    <select id="deleteCategoryAction">
+                    <select id="deleteCategoryAction" style="padding: 12px;">
                         <option value="delete">Удалить товары в ней</option>
                         <option value="move">Переместить в "Другое"</option>
                     </select>
                 </div>
             </div>
             
+            <!-- Вкладка: Настройки -->
             <div id="tabSettings" class="tab-pane">
                 <div class="form-group">
-                    <label>GitHub токен (для сохранения)</label>
+                    <label>🔑 GitHub токен</label>
                     <input type="password" id="githubToken" placeholder="ghp_...">
-                    <button class="btn btn-primary btn-sm" onclick="saveGithubToken()">💾 Сохранить токен</button>
+                    <button class="btn btn-primary btn-sm" onclick="saveGithubToken()" style="margin-top: 8px;">💾 Сохранить токен</button>
                 </div>
                 <hr>
                 <div class="form-group">
-                    <label>Телефон магазина</label>
+                    <label>📞 Телефон магазина</label>
                     <input type="text" id="shopPhone" placeholder="+7 (999) 123-45-67">
                 </div>
                 <div class="form-group">
-                    <label>Telegram ID менеджера</label>
+                    <label>🆔 Telegram ID менеджера</label>
                     <input type="text" id="managerId" placeholder="5404907427">
                 </div>
-                <button class="btn btn-primary" onclick="saveSettings()">💾 Сохранить настройки</button>
+                <button class="btn btn-primary btn-block" onclick="saveSettings()">💾 Сохранить настройки</button>
                 <hr>
-                <button class="btn btn-warning" onclick="exportAllData()">📤 Экспортировать data.json</button>
-                <button class="btn btn-success" onclick="saveToGitHub()" style="margin-left: 10px;">💾 Сохранить на сервер</button>
+                <!-- Кнопки поменяны местами: сначала Сохранить на сервер, потом Экспорт -->
+                <button class="btn btn-success btn-block" onclick="saveToGitHub()">💾 Сохранить на сервер</button>
+                <button class="btn btn-warning btn-block" onclick="exportAllData()" style="margin-top: 10px;">📤 Экспортировать data.json</button>
             </div>
         </div>
         
         <!-- Модальное окно редактирования цен -->
-        <div id="priceModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center;">
-            <div style="background: white; border-radius: 20px; max-width: 400px; width: 90%; margin: auto; padding: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3 id="priceModalTitle">Редактирование цен</h3>
-                    <button onclick="closePriceModal()" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
+        <div id="priceModal" class="modal-overlay">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="priceModalTitle">💰 Редактирование цен</h3>
+                    <button class="close-modal" onclick="closePriceModal()">×</button>
                 </div>
                 <div id="priceModalBody"></div>
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <div class="button-group">
                     <button class="btn btn-success" onclick="savePriceChanges()">💾 Сохранить</button>
                     <button class="btn btn-warning" onclick="closePriceModal()">Отмена</button>
                 </div>
@@ -316,9 +578,8 @@
     </div>
 </div>
 
-<div id="notification" class="notification"></div>
-
 <script>
+    // ============ ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ============
     let products = [];
     let categories = ["Электронки", "Жидкости", "Под-системы", "Испарители", "Картриджи", "Снюс"];
     let shopConfig = { contactPhone: "", managerTgId: "", botToken: "" };
@@ -328,15 +589,7 @@
     
     let githubConfig = { repo: "", token: null };
     
-    function showNotification(msg, isError = false) {
-        const notif = document.getElementById('notification');
-        notif.textContent = msg;
-        notif.style.backgroundColor = isError ? '#c62828' : '#1a1a2e';
-        notif.style.color = '#FFD700';
-        notif.style.display = 'block';
-        setTimeout(() => { notif.style.display = 'none'; }, 3000);
-    }
-    
+    // ============ ВСПОМОГАТЕЛЬНЫЕ ============
     function getRepoInfo() {
         const hostname = window.location.hostname;
         if (hostname.includes('github.io')) {
@@ -349,7 +602,6 @@
     }
     
     function switchToAddTab() {
-        // Переключаем вкладки
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
         
@@ -357,10 +609,24 @@
         if (addTabBtn) addTabBtn.classList.add('active');
         document.getElementById('tabAdd').classList.add('active');
         
-        // Скроллим к форме
         document.getElementById('productForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     
+    function clearProductForm() {
+        document.getElementById('productName').value = '';
+        document.getElementById('productDesc').value = '';
+        document.getElementById('productPhoto').value = '';
+        document.getElementById('price1').value = '';
+        document.getElementById('price2').value = '';
+        document.getElementById('price3').value = '';
+        document.getElementById('price4').value = '';
+        document.getElementById('price5').value = '';
+        currentVariants = [];
+        renderVariantsList();
+        editingProductId = null;
+    }
+    
+    // ============ ВХОД ============
     function checkLogin() {
         const password = document.getElementById('adminPassword').value;
         if (password === 'Amigo2025') {
@@ -373,6 +639,7 @@
         }
     }
     
+    // ============ ЗАГРУЗКА ДАННЫХ ============
     async function loadData() {
         try {
             const response = await fetch('./data.json?' + Date.now());
@@ -386,7 +653,7 @@
                     botToken: data.botToken || ''
                 };
             }
-        } catch(e) { console.log('Новый файл'); }
+        } catch(e) { console.log('Новый файл data.json'); }
         
         const savedToken = localStorage.getItem('amigoopt_github_token');
         if (savedToken) {
@@ -409,6 +676,7 @@
         if (select) select.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
     }
     
+    // ============ ОТОБРАЖЕНИЕ ТОВАРОВ ============
     function renderProductsList() {
         const searchTerm = document.getElementById('searchProduct')?.value.toLowerCase() || '';
         let filtered = products;
@@ -427,13 +695,13 @@
             const minPrice = p.priceRanges ? Math.min(...Object.values(p.priceRanges).filter(v => v > 0)) : 0;
             html += `<tr>
                 <td><img src="${p.photo || 'https://placehold.co/50x50/eee/ccc?text=No'}" class="product-photo" onerror="this.src='https://placehold.co/50x50/eee/ccc?text=No'"></td>
-                <td><strong>${escapeHtml(p.name)}</strong><br><small>${(p.description || '').substring(0, 40)}</small></td>
+                <td><strong>${escapeHtml(p.name)}</strong><br><small>${(p.description || '').substring(0, 35)}</small></td>
                 <td>${p.category || '-'}</td>
                 <td>от ${minPrice}₽</td>
                 <td>
-                    <button class="btn btn-warning btn-sm" onclick="editPrices(${p.id})">💰 Цены</button>
-                    <button class="btn btn-warning btn-sm" onclick="editProduct(${p.id})">✏️</button>
-                    <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})">🗑️</button>
+                    <button class="btn btn-warning btn-sm" onclick="editPrices(${p.id})" style="margin:2px;">💰</button>
+                    <button class="btn btn-warning btn-sm" onclick="editProduct(${p.id})" style="margin:2px;">✏️</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})" style="margin:2px;">🗑️</button>
                 </td>
             </tr>`;
         });
@@ -443,6 +711,7 @@
     
     function filterProducts() { renderProductsList(); }
     
+    // ============ РЕДАКТИРОВАНИЕ ЦЕН ============
     function editPrices(productId) {
         const product = products.find(p => p.id === productId);
         if (!product) return;
@@ -457,7 +726,7 @@
             { key: '100000-999999', label: '100 000+ ₽' }
         ];
         
-        let bodyHtml = `<div style="margin-bottom: 10px;"><strong>${escapeHtml(product.name)}</strong></div>`;
+        let bodyHtml = `<div style="margin-bottom: 15px;"><strong>${escapeHtml(product.name)}</strong></div>`;
         ranges.forEach(r => {
             bodyHtml += `<div class="price-edit-group">
                 <label>💰 ${r.label}:</label>
@@ -479,7 +748,7 @@
             const index = products.findIndex(p => p.id === editingProductId);
             if (index !== -1) {
                 products[index].priceRanges = { ...tempPriceRanges };
-                showNotification('✅ Цены обновлены! Не забудьте сохранить на сервер.');
+                alert('✅ Цены обновлены! Не забудьте сохранить на сервер.');
                 renderProductsList();
             }
         }
@@ -492,22 +761,27 @@
         tempPriceRanges = {};
     }
     
+    // ============ УПРАВЛЕНИЕ КАТЕГОРИЯМИ ============
     function renderCategoriesList() {
         const container = document.getElementById('categoriesList');
         if (!container) return;
+        if (!categories.length) {
+            container.innerHTML = '<small style="color:#888">Нет категорий. Добавьте первую!</small>';
+            return;
+        }
         container.innerHTML = categories.map((c, i) => `<span class="category-tag">${escapeHtml(c)}<button onclick="deleteCategory('${c}', ${i})">×</button></span>`).join('');
     }
     
     function addCategory() {
         const input = document.getElementById('newCategory');
         const newCat = input.value.trim();
-        if (!newCat) return alert('Введите название');
-        if (categories.includes(newCat)) return alert('Такая категория уже есть');
+        if (!newCat) { alert('Введите название категории'); return; }
+        if (categories.includes(newCat)) { alert('Такая категория уже существует'); return; }
         categories.push(newCat);
         updateCategorySelect();
         renderCategoriesList();
         input.value = '';
-        showNotification(`✅ Категория "${newCat}" добавлена`);
+        alert(`✅ Категория "${newCat}" добавлена!`);
     }
     
     function deleteCategory(category, index) {
@@ -515,11 +789,11 @@
         if (productsIn.length > 0) {
             const action = document.getElementById('deleteCategoryAction').value;
             if (action === 'delete') {
-                if (!confirm(`Удалить ${productsIn.length} товаров в категории "${category}"?`)) return;
+                if (!confirm(`В категории "${category}" есть ${productsIn.length} товаров. Удалить их все?`)) return;
                 products = products.filter(p => p.category !== category);
             } else {
                 const defaultCat = categories[0] || 'Другое';
-                if (!confirm(`Переместить ${productsIn.length} товаров в "${defaultCat}"?`)) return;
+                if (!confirm(`Переместить ${productsIn.length} товаров из "${category}" в "${defaultCat}"?`)) return;
                 products = products.map(p => p.category === category ? { ...p, category: defaultCat } : p);
             }
         }
@@ -527,9 +801,10 @@
         updateCategorySelect();
         renderCategoriesList();
         renderProductsList();
-        showNotification(`✅ Категория "${category}" удалена`);
+        alert(`✅ Категория "${category}" удалена`);
     }
     
+    // ============ УПРАВЛЕНИЕ ВАРИАНТАМИ ============
     function addVariant() {
         const input = document.getElementById('newVariant');
         const val = input.value.trim();
@@ -549,32 +824,20 @@
         const container = document.getElementById('variantsList');
         if (!container) return;
         if (!currentVariants.length) {
-            container.innerHTML = '<small>Нет вариантов. Добавьте вкусы/цвета</small>';
+            container.innerHTML = '<small style="color:#888">Нет вариантов. Добавьте вкусы/цвета</small>';
             return;
         }
         container.innerHTML = currentVariants.map((v, i) => `<span class="variant-tag">${escapeHtml(v)}<button onclick="removeVariant(${i})">×</button></span>`).join('');
     }
     
-    function clearProductForm() {
-        document.getElementById('productName').value = '';
-        document.getElementById('productDesc').value = '';
-        document.getElementById('productPhoto').value = '';
-        document.getElementById('price1').value = '';
-        document.getElementById('price2').value = '';
-        document.getElementById('price3').value = '';
-        document.getElementById('price4').value = '';
-        document.getElementById('price5').value = '';
-        currentVariants = [];
-        renderVariantsList();
-        editingProductId = null;
-    }
-    
+    // ============ СОХРАНЕНИЕ ТОВАРА ============
     document.getElementById('productForm')?.addEventListener('submit', (e) => {
         e.preventDefault();
         
         const newId = products.length ? Math.max(...products.map(p => p.id)) + 1 : 1;
         const category = document.getElementById('productCategory').value;
         let flavors = null, colors = null, resistances = null;
+        
         if (category === 'Электронки') flavors = currentVariants.length ? currentVariants : null;
         else if (category === 'Под-системы') colors = currentVariants.length ? currentVariants : null;
         else if (['Испарители', 'Картриджи'].includes(category)) resistances = currentVariants.length ? currentVariants : null;
@@ -592,7 +855,9 @@
                 "50000-100000": parseInt(document.getElementById('price4')?.value) || 0,
                 "100000-999999": parseInt(document.getElementById('price5')?.value) || 0
             },
-            flavors: flavors, colors: colors, resistances: resistances,
+            flavors: flavors,
+            colors: colors,
+            resistances: resistances,
             sale: document.getElementById('productSale').value === 'true',
             salePrice: null,
             photo: document.getElementById('productPhoto').value || '',
@@ -602,14 +867,15 @@
         products.push(newProduct);
         clearProductForm();
         renderProductsList();
-        showNotification(`✅ Товар "${newProduct.name}" сохранен!`);
+        alert(`✅ Товар "${newProduct.name}" сохранен!`);
     });
     
+    // ============ РЕДАКТИРОВАНИЕ ТОВАРА ============
     function editProduct(id) {
         const product = products.find(p => p.id === id);
         if (!product) return;
         
-        // Удаляем старую версию товара
+        // Удаляем старую версию
         const index = products.findIndex(p => p.id === id);
         if (index !== -1) products.splice(index, 1);
         
@@ -637,29 +903,32 @@
         // Переключаемся на вкладку "Добавить товар"
         switchToAddTab();
         
-        showNotification(`✏️ Редактирование: "${product.name}". После изменений нажмите "Сохранить товар"`);
+        alert(`✏️ Редактирование: "${product.name}". После изменений нажмите "Сохранить товар"`);
     }
     
+    // ============ УДАЛЕНИЕ ТОВАРА ============
     function deleteProduct(id) {
         const product = products.find(p => p.id === id);
         if (confirm(`Удалить товар "${product?.name}"?`)) {
             const idx = products.findIndex(p => p.id === id);
             if (idx !== -1) products.splice(idx, 1);
             renderProductsList();
-            showNotification('✅ Товар удален');
+            alert('✅ Товар удален');
         }
     }
     
+    // ============ СОХРАНЕНИЕ НА GITHUB ============
     async function saveToGitHub() {
         const token = document.getElementById('githubToken').value;
         if (!token || !token.startsWith('ghp_')) {
-            showNotification('❌ Введите корректный токен (ghp_...)', true);
+            alert('❌ Введите корректный GitHub токен (начинается с ghp_)');
             return;
         }
         if (!githubConfig.repo) {
-            showNotification('❌ Не удалось определить репозиторий', true);
+            alert('❌ Не удалось определить репозиторий');
             return;
         }
+        
         localStorage.setItem('amigoopt_github_token', token);
         
         const data = {
@@ -672,21 +941,45 @@
         };
         
         const url = `https://api.github.com/repos/${githubConfig.repo}/contents/data.json`;
+        
         try {
-            const getRes = await fetch(url, { headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' } });
+            const getRes = await fetch(url, {
+                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' }
+            });
             let sha = null;
-            if (getRes.ok) { const fd = await getRes.json(); sha = fd.sha; }
+            if (getRes.ok) {
+                const fd = await getRes.json();
+                sha = fd.sha;
+            }
+            
             const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
             const putRes = await fetch(url, {
                 method: 'PUT',
-                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: `Обновление от ${new Date().toLocaleString('ru-RU')}`, content: content, sha: sha })
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: `Обновление данных от ${new Date().toLocaleString('ru-RU')}`,
+                    content: content,
+                    sha: sha
+                })
             });
-            if (putRes.ok) showNotification('✅ Сохранено! Через 2 минуты изменения появятся');
-            else showNotification('❌ Ошибка сохранения', true);
-        } catch(e) { showNotification('⚠️ Ошибка соединения', true); }
+            
+            if (putRes.ok) {
+                alert('✅ Данные успешно сохранены! Через 2 минуты изменения появятся');
+            } else {
+                const error = await putRes.json();
+                alert(`❌ Ошибка: ${error.message}`);
+            }
+        } catch(e) {
+            console.error(e);
+            alert('⚠️ Ошибка соединения');
+        }
     }
     
+    // ============ ЭКСПОРТ ============
     function exportAllData() {
         const data = {
             shopName: 'AmigoOPT',
@@ -696,27 +989,34 @@
             categories: categories,
             products: products
         };
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const jsonStr = JSON.stringify(data, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
+        a.href = url;
         a.download = 'data.json';
         a.click();
-        URL.revokeObjectURL(blob);
-        showNotification('✅ data.json скачан');
+        URL.revokeObjectURL(url);
+        alert('✅ Файл data.json скачан! Загрузите его в репозиторий.');
     }
     
+    // ============ НАСТРОЙКИ ============
     function saveGithubToken() {
         const token = document.getElementById('githubToken').value;
         if (token && token.startsWith('ghp_')) {
             localStorage.setItem('amigoopt_github_token', token);
-            showNotification('✅ Токен сохранен');
-        } else showNotification('❌ Неверный токен', true);
+            githubConfig.token = token;
+            alert('✅ Токен сохранен!');
+        } else {
+            alert('❌ Неверный формат токена. Токен должен начинаться с "ghp_"');
+        }
     }
     
     function saveSettings() {
-        showNotification('✅ Настройки сохранены локально. Нажмите "Сохранить на сервер" для применения');
+        alert('✅ Настройки сохранены локально! Нажмите "Сохранить на сервер" для применения.');
     }
     
+    // ============ ВКЛАДКИ ============
     function setupTabs() {
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
