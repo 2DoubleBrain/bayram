@@ -600,7 +600,6 @@ body {
     margin: 30px 0 20px;
 }
 
-/* Стили для формы оформления заказа */
 .checkout-form {
     padding: 10px 0;
 }
@@ -653,22 +652,7 @@ body {
     margin-top: 10px;
 }
 
-@media (max-width: 480px) {
-    .products-grid {
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-        gap: 12px;
-    }
-    .modal-content {
-        margin: 50px 12px 20px;
-    }
-    .empty-cart {
-        padding: 60px 20px;
-    }
-    .contacts-page {
-        padding: 30px 20px;
-    }
-}
-/* ============ РЕЖИМ МЕНЕДЖЕРА ============ */
+/* Режим менеджера */
 .price-edit-btn {
     background: #ff9800;
     color: white;
@@ -679,6 +663,97 @@ body {
     cursor: pointer;
     margin-top: 5px;
     width: 100%;
+}
+
+.manager-notification {
+    position: fixed;
+    bottom: 80px;
+    left: 0;
+    right: 0;
+    max-width: 500px;
+    margin: 0 auto;
+    z-index: 1000;
+    padding: 10px;
+}
+
+.notification-content {
+    background: #1a1a2e;
+    color: #FFD700;
+    padding: 15px;
+    border-radius: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.save-github-btn {
+    background: #4caf50;
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.close-notif-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.manager-panel {
+    margin-top: 30px;
+    padding: 20px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 20px;
+}
+
+.manager-header {
+    color: #FFD700;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.manager-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.manager-save-btn {
+    background: #4caf50;
+    color: white;
+    border: none;
+    padding: 12px 15px;
+    border-radius: 30px;
+    flex: 1;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.manager-exit-btn {
+    background: #ff9800;
+    color: white;
+    border: none;
+    padding: 12px 15px;
+    border-radius: 30px;
+    flex: 1;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.manager-hint {
+    font-size: 11px;
+    color: #aaa;
+    text-align: center;
+    margin-top: 15px;
 }
 
 .price-edit-group {
@@ -737,95 +812,18 @@ body {
     gap: 5px;
 }
 
-/* Уведомление */
-.manager-notification {
-    position: fixed;
-    bottom: 80px;
-    left: 0;
-    right: 0;
-    max-width: 500px;
-    margin: 0 auto;
-    z-index: 1000;
-    padding: 10px;
-}
-
-.notification-content {
-    background: #1a1a2e;
-    color: #FFD700;
-    padding: 15px;
-    border-radius: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-}
-
-.save-github-btn {
-    background: #4caf50;
-    color: white;
-    border: none;
-    padding: 8px 20px;
-    border-radius: 30px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.close-notif-btn {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 20px;
-    cursor: pointer;
-}
-
-/* Панель менеджера */
-.manager-panel {
-    margin-top: 30px;
-    padding: 20px;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    border-radius: 20px;
-}
-
-.manager-header {
-    color: #FFD700;
-    font-size: 18px;
-    font-weight: bold;
-    text-align: center;
-    margin-bottom: 15px;
-}
-
-.manager-actions {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.manager-save-btn {
-    background: #4caf50;
-    color: white;
-    border: none;
-    padding: 12px 15px;
-    border-radius: 30px;
-    flex: 1;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.manager-exit-btn {
-    background: #ff9800;
-    color: white;
-    border: none;
-    padding: 12px 15px;
-    border-radius: 30px;
-    flex: 1;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.manager-hint {
-    font-size: 11px;
-    color: #aaa;
-    text-align: center;
-    margin-top: 15px;
+@media (max-width: 480px) {
+    .products-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 12px;
+    }
+    .modal-content {
+        margin: 50px 12px 20px;
+    }
+    .empty-cart {
+        padding: 60px 20px;
+    }
+    .contacts-page {
+        padding: 30px 20px;
+    }
 }
