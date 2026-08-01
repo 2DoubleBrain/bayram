@@ -13,28 +13,6 @@
   ],
   "products": [
     {
-      "id": 6,
-      "name": "MFU 25000",
-      "description": "",
-      "category": "Электронки",
-      "priceRanges": {
-        "3000-10000": 410,
-        "10000-30000": 405,
-        "30000-50000": 400,
-        "50000-100000": 390,
-        "100000-999999": 380
-      },
-      "flavors": [
-        "Уточнить у менеджера"
-      ],
-      "colors": null,
-      "resistances": null,
-      "sale": false,
-      "salePrice": null,
-      "photo": "https://i.postimg.cc/4xdSDTNt/5440618924673274820.jpg",
-      "popular": false
-    },
-    {
       "id": 8,
       "name": "NEXA PRO 30000",
       "description": "",
@@ -7645,6 +7623,28 @@
       "sale": false,
       "salePrice": null,
       "photo": "https://i.postimg.cc/MpSG5dWC/5440618924673274815.jpg",
+      "popular": false
+    },
+    {
+      "id": 243,
+      "name": "MFU 25000",
+      "description": "",
+      "category": "Электронки",
+      "priceRanges": {
+        "3000-10000": 411,
+        "10000-30000": 405,
+        "30000-50000": 400,
+        "50000-100000": 390,
+        "100000-999999": 380
+      },
+      "flavors": [
+        "Уточнить у менеджера"
+      ],
+      "colors": null,
+      "resistances": null,
+      "sale": false,
+      "salePrice": null,
+      "photo": "https://i.postimg.cc/4xdSDTNt/5440618924673274820.jpg",
       "popular": false
     }
   ]
